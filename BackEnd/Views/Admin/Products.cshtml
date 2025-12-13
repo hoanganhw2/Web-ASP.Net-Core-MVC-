@@ -1,0 +1,234 @@
+@model List<BackEnd.Models.Entity.Book>
+@{
+    ViewData["Title"] = "Quản lý Sản phẩm";
+    var subCategories = ViewBag.SubCategories as List<BackEnd.Models.Entity.SubCategory> ?? new List<BackEnd.Models.Entity.SubCategory>();
+}
+
+<!-- Page Header -->
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="page-title">Quản lý Sản phẩm</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/admin">Admin</a></li>
+                <li class="breadcrumb-item active">Sản phẩm</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="d-flex gap-2">
+        <div class="input-group" style="width: 250px;">
+            <input type="text" id="searchInput" class="form-control" placeholder="Tìm kiếm sản phẩm...">
+            <button class="btn btn-outline-secondary" type="button">
+                <i class="fas fa-search"></i>
+            </button>
+        </div>
+        <a href="/admin/products/add" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Thêm sản phẩm
+        </a>
+    </div>
+</div>
+
+<!-- Products List -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title">Danh sách sản phẩm (@Model.Count)</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table" id="productsTable">
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">ID</th>
+                        <th style="width: 80px;">Ảnh</th>
+                        <th>Tên sách</th>
+                        <th>Tiêu đề</th>
+                        <th>Danh mục</th>
+                        <th>Giá gốc</th>
+                        <th>Giá KM</th>
+                        <th>Tồn kho</th>
+                        <th style="width: 120px;">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center text-muted py-4">
+                                <i class="fas fa-box-open fa-2x mb-2"></i><br>
+                                Chưa có sản phẩm nào
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var product in Model)
+                        {
+                            var firstImage = product.Images?.FirstOrDefault();
+                            var imagePath = firstImage != null ? Url.Content("~/img/product/" + firstImage.Path) : Url.Content("~/img/default-book.jpg");
+                            <tr>
+                                <td><strong>@product.Id</strong></td>
+                                <td>
+                                    <img src="@imagePath" alt="@product.Name" style="width: 50px; height: 60px; object-fit: cover; border-radius: 4px;">
+                                </td>
+                                <td>
+                                    <strong class="d-block" style="max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="@product.Name">@product.Name</strong>
+                                </td>
+                                <td class="text-muted" style="max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="@product.Title">@product.Title</td>
+                                <td>
+                                    @if (product.subCategory != null)
+                                    {
+                                        <span class="badge bg-light text-dark">@product.subCategory.Name</span>
+                                    }
+                                </td>
+                                <td>@String.Format("{0:N0}đ", product.Price)</td>
+                                <td>
+                                    @if (product.Price_Discount > 0 && product.Price_Discount < product.Price)
+                                    {
+                                        <span class="text-success fw-bold">@String.Format("{0:N0}đ", product.Price_Discount)</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (product.Stock > 10)
+                                    {
+                                        <span class="badge bg-success">@product.Stock</span>
+                                    }
+                                    else if (product.Stock > 0)
+                                    {
+                                        <span class="badge bg-warning">@product.Stock</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">Hết hàng</span>
+                                    }
+                                </td>
+                                <td>
+                                    <a href="/admin/products/edit/@product.Id" class="btn btn-sm btn-outline-primary btn-action me-1" title="Sửa">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-danger btn-action" onclick="deleteProduct(@product.Id, '@product.Name.Replace("'", "\\'")')" title="Xóa">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <!-- Pagination -->
+    <div class="card-footer d-flex justify-content-between align-items-center">
+        <div class="text-muted">
+            Hiển thị <span id="showingStart">1</span>-<span id="showingEnd">10</span> trong <span id="totalItems">@Model.Count</span> sản phẩm
+        </div>
+        <nav>
+            <ul class="pagination pagination-sm mb-0" id="pagination"></ul>
+        </nav>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteProductModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Xác nhận xóa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc chắn muốn xóa sản phẩm "<strong id="deleteProductName"></strong>"?</p>
+                <p class="text-danger mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Hành động này không thể hoàn tác!</p>
+                <input type="hidden" id="deleteProductId">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDeleteProduct()">
+                    <i class="fas fa-trash me-2"></i>Xóa
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const itemsPerPage = 10;
+        let currentPage = 1;
+        let allRows = [];
+        let filteredRows = [];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            allRows = Array.from(document.querySelectorAll('#productsTable tbody tr'));
+            filteredRows = allRows;
+            renderPagination();
+            showPage(1);
+        });
+
+        document.getElementById('searchInput').addEventListener('input', function() {
+            const filter = this.value.toLowerCase();
+            filteredRows = allRows.filter(row => row.textContent.toLowerCase().includes(filter));
+            currentPage = 1;
+            renderPagination();
+            showPage(1);
+        });
+
+        function showPage(page) {
+            currentPage = page;
+            const start = (page - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+
+            allRows.forEach(row => row.style.display = 'none');
+            filteredRows.slice(start, end).forEach(row => row.style.display = '');
+
+            document.getElementById('showingStart').textContent = filteredRows.length > 0 ? start + 1 : 0;
+            document.getElementById('showingEnd').textContent = Math.min(end, filteredRows.length);
+            document.getElementById('totalItems').textContent = filteredRows.length;
+            renderPagination();
+        }
+
+        function renderPagination() {
+            const totalPages = Math.ceil(filteredRows.length / itemsPerPage);
+            const pagination = document.getElementById('pagination');
+            pagination.innerHTML = '';
+            if (totalPages <= 1) return;
+
+            pagination.innerHTML += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}"><a class="page-link" href="#" onclick="showPage(${currentPage - 1}); return false;">«</a></li>`;
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                    pagination.innerHTML += `<li class="page-item ${i === currentPage ? 'active' : ''}"><a class="page-link" href="#" onclick="showPage(${i}); return false;">${i}</a></li>`;
+                } else if (i === currentPage - 2 || i === currentPage + 2) {
+                    pagination.innerHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                }
+            }
+            pagination.innerHTML += `<li class="page-item ${currentPage === totalPages ? 'disabled' : ''}"><a class="page-link" href="#" onclick="showPage(${currentPage + 1}); return false;">»</a></li>`;
+        }
+
+        function deleteProduct(id, name) {
+            document.getElementById('deleteProductId').value = id;
+            document.getElementById('deleteProductName').textContent = name;
+            new bootstrap.Modal(document.getElementById('deleteProductModal')).show();
+        }
+
+        function confirmDeleteProduct() {
+            const id = document.getElementById('deleteProductId').value;
+
+            fetch(`/admin/products/delete/${id}`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                bootstrap.Modal.getInstance(document.getElementById('deleteProductModal')).hide();
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast(data.message, 'error');
+                }
+            });
+        }
+    </script>
+}

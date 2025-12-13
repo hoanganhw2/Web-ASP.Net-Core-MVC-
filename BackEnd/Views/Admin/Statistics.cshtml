@@ -1,0 +1,234 @@
+@{
+    ViewData["Title"] = "Thống kê";
+    var monthlyRevenue = ViewBag.MonthlyRevenue as IEnumerable<dynamic> ?? new List<dynamic>();
+    var topProducts = ViewBag.TopProducts as IEnumerable<dynamic> ?? new List<dynamic>();
+}
+
+<!-- Page Header -->
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="page-title">Thống kê & Báo cáo</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/admin">Admin</a></li>
+                <li class="breadcrumb-item active">Thống kê</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Revenue Chart -->
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title">Doanh thu theo tháng (12 tháng gần nhất)</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="revenueChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Top Products -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title">Top 10 sản phẩm bán chạy</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Sản phẩm</th>
+                                <th class="text-center">Số lượng</th>
+                                <th class="text-end">Doanh thu</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{
+                                var rank = 1;
+                            }
+                            @foreach (var product in topProducts)
+                            {
+                                <tr>
+                                    <td>
+                                        @if (rank == 1)
+                                        {
+                                            <span class="badge bg-warning text-dark">🥇 1</span>
+                                        }
+                                        else if (rank == 2)
+                                        {
+                                            <span class="badge bg-secondary">🥈 2</span>
+                                        }
+                                        else if (rank == 3)
+                                        {
+                                            <span class="badge bg-danger">🥉 3</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">@rank</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <strong class="d-block text-truncate" style="max-width: 200px;">@product.BookName</strong>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-primary">@product.TotalQuantity</span>
+                                    </td>
+                                    <td class="text-end">@String.Format("{0:N0}đ", product.TotalRevenue)</td>
+                                </tr>
+                                rank++;
+                            }
+                            @if (!topProducts.Any())
+                            {
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-4">
+                                        Chưa có dữ liệu
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Monthly Stats Table -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title">Chi tiết doanh thu theo tháng</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Tháng</th>
+                                <th class="text-center">Số đơn</th>
+                                <th class="text-end">Doanh thu</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in monthlyRevenue)
+                            {
+                                <tr>
+                                    <td>@item.Month/@item.Year</td>
+                                    <td class="text-center">
+                                        <span class="badge bg-info">@item.OrderCount đơn</span>
+                                    </td>
+                                    <td class="text-end"><strong>@String.Format("{0:N0}đ", item.Revenue)</strong></td>
+                                </tr>
+                            }
+                            @if (!monthlyRevenue.Any())
+                            {
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted py-4">
+                                        Chưa có dữ liệu
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Revenue Chart
+        const ctx = document.getElementById('revenueChart').getContext('2d');
+        
+        const monthlyData = [
+            @foreach (var item in monthlyRevenue)
+            {
+                @:{ month: '@item.Month/@item.Year', revenue: @item.Revenue, orders: @item.OrderCount },
+            }
+        ];
+
+        const labels = monthlyData.map(d => d.month);
+        const revenues = monthlyData.map(d => d.revenue);
+        const orders = monthlyData.map(d => d.orders);
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels.length > 0 ? labels : ['Không có dữ liệu'],
+                datasets: [{
+                    label: 'Doanh thu (VNĐ)',
+                    data: revenues.length > 0 ? revenues : [0],
+                    backgroundColor: 'rgba(79, 70, 229, 0.8)',
+                    borderRadius: 8,
+                    yAxisID: 'y'
+                }, {
+                    label: 'Số đơn hàng',
+                    data: orders.length > 0 ? orders : [0],
+                    type: 'line',
+                    borderColor: '#22c55e',
+                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                    borderWidth: 3,
+                    pointBackgroundColor: '#22c55e',
+                    pointRadius: 5,
+                    yAxisID: 'y1',
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                if (context.datasetIndex === 0) {
+                                    return 'Doanh thu: ' + new Intl.NumberFormat('vi-VN').format(context.raw) + 'đ';
+                                }
+                                return 'Số đơn: ' + context.raw;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Doanh thu (VNĐ)'
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return new Intl.NumberFormat('vi-VN', { notation: 'compact' }).format(value);
+                            }
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Số đơn hàng'
+                        },
+                        grid: {
+                            drawOnChartArea: false,
+                        },
+                    },
+                }
+            }
+        });
+    </script>
+}

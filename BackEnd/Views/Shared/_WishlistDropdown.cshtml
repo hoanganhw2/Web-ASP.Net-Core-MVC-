@@ -1,0 +1,69 @@
+@using BackEnd.Models
+@model List<WishlistItem>
+@{
+    var wishlistItems = Model ?? new List<WishlistItem>();
+}
+<div class="header-dropdown-content">
+    <div class="site-wishlist">
+        <div class="wishlist-header d-flex justify-content-between align-items-center p-2 border-bottom">
+            <h6 class="mb-0">Sản phẩm yêu thích</h6>
+            <button type="button" class="btn-close-wishlist" style="background:none;border:none;cursor:pointer;" title="Đóng">
+                <i class="fa-solid fa-xmark fs-5"></i>
+            </button>
+        </div>
+        <div class="wishlist-view clearfix">
+            <div class="wishlist-view-scroll" style="max-height: 350px; overflow-y: auto;">
+                @if (wishlistItems.Count == 0)
+                {
+                    <p class="text-center py-3">Chưa có sản phẩm yêu thích</p>
+                }
+                else
+                {
+                    <table class="table-clone-cart">
+                        <tbody>
+                            @foreach (var item in wishlistItems)
+                            {
+                                <tr>
+                                    <td class="img">
+                                        <a href="/products/@item.BookId">
+                                            <img src="~/img/product/@item.ImagePath" alt="@item.BookName"
+                                                 style="width: 80px; height: auto;">
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <p class="pro-title">
+                                            <a class="pro-title-view" href="/products/@item.BookId">@item.BookName</a>
+                                        </p>
+                                        <div class="mini-cart_quantity">
+                                            <div class="pro-price-view">
+                                                @if (item.PriceDiscount < item.Price)
+                                                {
+                                                    <span class="text-decoration-line-through text-muted me-2">@String.Format("{0:N0}", item.Price)đ</span>
+                                                    <span class="text-danger">@String.Format("{0:N0}", item.PriceDiscount)đ</span>
+                                                }
+                                                else
+                                                {
+                                                    <span>@String.Format("{0:N0}", item.Price)đ</span>
+                                                }
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="actions" style="vertical-align: middle;">
+                                        <button type="button" class="btn-add-cart-from-wishlist" data-book-id="@item.BookId" 
+                                                style="background:none;border:none;cursor:pointer;" title="Thêm vào giỏ">
+                                            <i class="fa-solid fa-cart-plus text-primary"></i>
+                                        </button>
+                                        <button type="button" class="btn-remove-wishlist" data-book-id="@item.BookId" 
+                                                style="background:none;border:none;cursor:pointer;" title="Xóa khỏi yêu thích">
+                                            <i class="fa-solid fa-trash text-danger"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    </div>
+</div>

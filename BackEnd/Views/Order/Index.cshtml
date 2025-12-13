@@ -1,0 +1,156 @@
+@using BackEnd.Models.Entity
+@using BackEnd.Controllers
+@model List<Order>
+@{
+    ViewData["Title"] = "Đơn hàng của tôi";
+}
+
+<div class="orders-page">
+    <div class="breadcrumb-shop">
+        <div class="container">
+            <div class="row">
+                <div class="col-12">
+                    <ol class="breadcrumb breadcrumb-arrows">
+                        <li><a href="/">Trang chủ</a></li>
+                        <li class="active">Đơn hàng của tôi</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container py-4">
+        <h2 class="mb-4"><i class="fa-solid fa-box text-primary me-2"></i>Đơn hàng của tôi</h2>
+        
+        @if (Model == null || Model.Count == 0)
+        {
+            <div class="text-center py-5">
+                <i class="fa-solid fa-box-open" style="font-size: 80px; color: #ccc;"></i>
+                <h4 class="mt-4 text-muted">Bạn chưa có đơn hàng nào</h4>
+                <p class="text-muted">Hãy mua sắm và quay lại đây!</p>
+                <a href="/products" class="btn btn-primary mt-3">
+                    <i class="fa-solid fa-shopping-bag me-2"></i>Mua sắm ngay
+                </a>
+            </div>
+        }
+        else
+        {
+            <div class="row">
+                @foreach (var order in Model)
+                {
+                    <div class="col-12 mb-4">
+                        <div class="card order-card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="fw-bold">Đơn hàng #@order.Id</span>
+                                    <span class="text-muted ms-3">
+                                        <i class="fa-solid fa-calendar me-1"></i>
+                                        @order.OrderDate.ToString("dd/MM/yyyy HH:mm")
+                                    </span>
+                                </div>
+                                <span class="badge @OrderController.GetStatusBadgeClass(order.Status)">
+                                    @OrderController.GetStatusText(order.Status)
+                                </span>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <p class="mb-2">
+                                            <i class="fa-solid fa-location-dot me-2 text-muted"></i>
+                                            <strong>Địa chỉ:</strong> @order.ShippingAddress
+                                        </p>
+                                        <p class="mb-2">
+                                            <i class="fa-solid fa-phone me-2 text-muted"></i>
+                                            <strong>SĐT:</strong> @order.PhoneNumber
+                                        </p>
+                                        <p class="mb-0">
+                                            <i class="fa-solid fa-box me-2 text-muted"></i>
+                                            <strong>Số sản phẩm:</strong> @(order.OrderItems?.Count ?? 0) sản phẩm
+                                        </p>
+                                    </div>
+                                    <div class="col-md-4 text-md-end">
+                                        <div class="order-total">
+                                            <span class="text-muted">Tổng tiền:</span>
+                                            <div class="fs-4 fw-bold text-danger">
+                                                @String.Format("{0:N0}", order.TotalAmount)đ
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer d-flex justify-content-between align-items-center">
+                                <div>
+                                    @if (order.DiscountCode != null)
+                                    {
+                                        <span class="badge bg-success me-2">
+                                            <i class="fa-solid fa-tag me-1"></i>@order.DiscountCode.Code
+                                        </span>
+                                    }
+                                </div>
+                                <div>
+                                    @if (order.Status == 0)
+                                    {
+                                        <button type="button" class="btn btn-outline-danger btn-sm btn-cancel-order me-2" 
+                                                data-order-id="@order.Id">
+                                            <i class="fa-solid fa-times me-1"></i>Hủy đơn
+                                        </button>
+                                    }
+                                    <a href="/orders/details/@order.Id" class="btn btn-primary btn-sm">
+                                        <i class="fa-solid fa-eye me-1"></i>Xem chi tiết
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .order-card {
+        border: none;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+        transition: transform 0.2s;
+    }
+    .order-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(0,0,0,0.12);
+    }
+    .order-card .card-header {
+        background: #f8f9fa;
+        border-bottom: 1px solid #eee;
+    }
+</style>
+
+@section Scripts {
+<script>
+    $(document).ready(function() {
+        $('.btn-cancel-order').on('click', function() {
+            var orderId = $(this).data('order-id');
+            var btn = $(this);
+            
+            if (!confirm('Bạn có chắc chắn muốn hủy đơn hàng #' + orderId + '?')) {
+                return;
+            }
+            
+            $.ajax({
+                url: '/orders/cancel/' + orderId,
+                type: 'POST',
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+                        location.reload();
+                    } else {
+                        toastr.error(response.message);
+                    }
+                },
+                error: function() {
+                    toastr.error('Có lỗi xảy ra!');
+                }
+            });
+        });
+    });
+</script>
+}

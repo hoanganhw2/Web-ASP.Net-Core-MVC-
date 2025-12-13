@@ -1,0 +1,225 @@
+@model BackEnd.Models.Entity.Order
+@{
+    ViewData["Title"] = $"Chi tiết đơn hàng #{Model.Id}";
+    
+    var statusClass = Model.Status switch
+    {
+        0 => "bg-warning",
+        1 => "bg-info",
+        2 => "bg-success",
+        3 => "bg-danger",
+        _ => "bg-secondary"
+    };
+    var statusText = Model.Status switch
+    {
+        0 => "Chờ xác nhận",
+        1 => "Đang giao",
+        2 => "Hoàn thành",
+        3 => "Đã hủy",
+        _ => "Không xác định"
+    };
+}
+
+<!-- Page Header -->
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="page-title">Chi tiết đơn hàng #@Model.Id</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/admin">Admin</a></li>
+                <li class="breadcrumb-item"><a href="/admin/orders">Đơn hàng</a></li>
+                <li class="breadcrumb-item active">#@Model.Id</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/admin/orders" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Quay lại
+        </a>
+        @if (Model.Status == 0)
+        {
+            <button class="btn btn-success" onclick="updateOrderStatus(@Model.Id, 1)">
+                <i class="fas fa-truck me-2"></i>Xác nhận & Giao hàng
+            </button>
+            <button class="btn btn-danger" onclick="updateOrderStatus(@Model.Id, 3)">
+                <i class="fas fa-times me-2"></i>Hủy đơn
+            </button>
+        }
+        else if (Model.Status == 1)
+        {
+            <button class="btn btn-success" onclick="updateOrderStatus(@Model.Id, 2)">
+                <i class="fas fa-check me-2"></i>Đánh dấu hoàn thành
+            </button>
+        }
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Order Info -->
+    <div class="col-lg-8">
+        <!-- Products -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title">Sản phẩm đặt mua (@(Model.OrderItems?.Count ?? 0) sản phẩm)</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Sản phẩm</th>
+                                <th class="text-end">Đơn giá</th>
+                                <th class="text-center">Số lượng</th>
+                                <th class="text-end">Thành tiền</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.OrderItems != null)
+                            {
+                                @foreach (var item in Model.OrderItems)
+                                {
+                                    var firstImage = item.Book?.Images?.FirstOrDefault();
+                                    var imagePath = firstImage != null ? Url.Content("~/img/product/" + firstImage.Path) : Url.Content("~/img/default-book.jpg");
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <img src="@imagePath" alt="@item.BookName" 
+                                                     style="width: 50px; height: 60px; object-fit: cover; border-radius: 4px; margin-right: 12px;">
+                                                <div>
+                                                    <strong>@item.BookName</strong>
+                                                    <div class="text-muted small">Mã SP: @item.BookId</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="text-end">@String.Format("{0:N0}đ", item.Price)</td>
+                                        <td class="text-center">@item.Quantity</td>
+                                        <td class="text-end"><strong>@String.Format("{0:N0}đ", item.Total)</strong></td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notes -->
+        @if (!string.IsNullOrEmpty(Model.Note))
+        {
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">Ghi chú từ khách hàng</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">@Model.Note</p>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Status Card -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title">Trạng thái đơn hàng</h5>
+            </div>
+            <div class="card-body text-center py-4">
+                <span class="badge @statusClass fs-6 px-4 py-2">@statusText</span>
+                <p class="text-muted mt-3 mb-0">Đặt hàng lúc: @Model.OrderDate.ToString("dd/MM/yyyy HH:mm")</p>
+            </div>
+        </div>
+
+        <!-- Customer Info -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title">Thông tin giao hàng</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="text-muted small">Số điện thoại</div>
+                    <strong><i class="fas fa-phone me-2"></i>@Model.PhoneNumber</strong>
+                </div>
+                <div>
+                    <div class="text-muted small">Địa chỉ giao hàng</div>
+                    <strong><i class="fas fa-map-marker-alt me-2"></i>@Model.ShippingAddress</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Summary -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Thanh toán</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Tạm tính:</span>
+                    <span>@String.Format("{0:N0}đ", Model.SubTotal)</span>
+                </div>
+                
+                @if (Model.DiscountAmount > 0)
+                {
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">
+                            Giảm giá
+                            @if (Model.DiscountCode != null)
+                            {
+                                <span class="badge bg-success">@Model.DiscountCode.Code</span>
+                            }
+                        </span>
+                        <span class="text-success">-@String.Format("{0:N0}đ", Model.DiscountAmount)</span>
+                    </div>
+                }
+                
+                <hr>
+                
+                <div class="d-flex justify-content-between">
+                    <strong>Tổng cộng:</strong>
+                    <strong class="text-primary fs-5">@String.Format("{0:N0}đ", Model.TotalAmount)</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function updateOrderStatus(orderId, status) {
+            const statusText = {
+                1: 'Đang giao',
+                2: 'Hoàn thành',
+                3: 'Đã hủy'
+            };
+            
+            const btnClass = status === 3 ? 'btn-danger' : 'btn-success';
+
+            showConfirm(
+                `Bạn có chắc chắn muốn cập nhật trạng thái đơn hàng thành "<strong>${statusText[status]}</strong>"?`,
+                function() {
+                    fetch('/admin/orders/update-status', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `orderId=${orderId}&status=${status}`
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showToast(data.message, 'success');
+                            setTimeout(() => location.reload(), 1000);
+                        } else {
+                            showToast(data.message, 'error');
+                        }
+                    });
+                },
+                { 
+                    title: 'Xác nhận cập nhật', 
+                    confirmText: 'Cập nhật',
+                    btnClass: btnClass
+                }
+            );
+        }
+    </script>
+}

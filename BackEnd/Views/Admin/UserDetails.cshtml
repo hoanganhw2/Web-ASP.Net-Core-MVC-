@@ -1,0 +1,269 @@
+@model BackEnd.Models.Entity.User
+@{
+    ViewData["Title"] = $"Chi tiết người dùng - {Model.fullname}";
+    var roles = ViewBag.Roles as List<BackEnd.Models.Entity.Role> ?? new List<BackEnd.Models.Entity.Role>();
+    var orders = ViewBag.Orders as List<BackEnd.Models.Entity.Order> ?? new List<BackEnd.Models.Entity.Order>();
+    var currentUserId = Context.Session.GetInt32("id");
+}
+
+<!-- Page Header -->
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="page-title">Chi tiết người dùng</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/admin">Admin</a></li>
+                <li class="breadcrumb-item"><a href="/admin/users">Người dùng</a></li>
+                <li class="breadcrumb-item active">@Model.fullname</li>
+            </ol>
+        </nav>
+    </div>
+    <a href="/admin/users" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Quay lại
+    </a>
+</div>
+
+<div class="row g-4">
+    <!-- User Info -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-body text-center py-4">
+                <div class="user-avatar mx-auto mb-3" style="width: 80px; height: 80px; font-size: 2rem;">
+                    @(Model.fullname.Length > 0 ? Model.fullname[0].ToString().ToUpper() : "U")
+                </div>
+                <h4>@Model.fullname</h4>
+                <p class="text-muted mb-2">@Model.email</p>
+                @{
+                    var roleClass = Model.role?.name == "ADMIN" ? "bg-danger" : "bg-primary";
+                }
+                <span class="badge @roleClass fs-6">@(Model.role?.name ?? "USER")</span>
+                @if (currentUserId == Model.id)
+                {
+                    <span class="badge bg-info ms-1">Bạn</span>
+                }
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="card-title">Thông tin liên hệ</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="text-muted small">Tài khoản</div>
+                    <code>@Model.username</code>
+                </div>
+                <div class="mb-3">
+                    <div class="text-muted small">Email</div>
+                    <strong>@Model.email</strong>
+                </div>
+                <div class="mb-3">
+                    <div class="text-muted small">Số điện thoại</div>
+                    <strong>@Model.phonenumber</strong>
+                </div>
+                <div>
+                    <div class="text-muted small">Địa chỉ</div>
+                    <strong>@Model.address</strong>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Actions -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="card-title">Hành động</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-warning" onclick="changeRole(@Model.id, '@Model.fullname', @Model.role_id)">
+                        <i class="fas fa-user-tag me-2"></i>Thay đổi vai trò
+                    </button>
+                    @if (currentUserId != Model.id)
+                    {
+                        <button class="btn btn-outline-danger" onclick="deleteUser(@Model.id, '@Model.fullname.Replace("'", "\\'")'}')">
+                            <i class="fas fa-trash me-2"></i>Xóa người dùng
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Orders -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title">Đơn hàng gần đây</h5>
+                <span class="badge bg-info">@orders.Count đơn hàng</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Mã đơn</th>
+                                <th>Ngày đặt</th>
+                                <th>Tổng tiền</th>
+                                <th>Trạng thái</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (orders.Count == 0)
+                            {
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-4">
+                                        <i class="fas fa-inbox fa-2x mb-2"></i><br>
+                                        Chưa có đơn hàng nào
+                                    </td>
+                                </tr>
+                            }
+                            else
+                            {
+                                @foreach (var order in orders)
+                                {
+                                    var statusClass = order.Status switch
+                                    {
+                                        0 => "bg-warning",
+                                        1 => "bg-info",
+                                        2 => "bg-success",
+                                        3 => "bg-danger",
+                                        _ => "bg-secondary"
+                                    };
+                                    var statusText = order.Status switch
+                                    {
+                                        0 => "Chờ xác nhận",
+                                        1 => "Đang giao",
+                                        2 => "Hoàn thành",
+                                        3 => "Đã hủy",
+                                        _ => "Không xác định"
+                                    };
+                                    
+                                    <tr>
+                                        <td><strong>#@order.Id</strong></td>
+                                        <td>@order.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
+                                        <td>@String.Format("{0:N0}đ", order.TotalAmount)</td>
+                                        <td><span class="badge @statusClass">@statusText</span></td>
+                                        <td>
+                                            <a href="/admin/orders/details/@order.Id" class="btn btn-sm btn-outline-primary btn-action" title="Chi tiết">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Change Role Modal -->
+<div class="modal fade" id="changeRoleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Thay đổi vai trò</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Thay đổi vai trò cho người dùng: <strong id="changeRoleUserName"></strong></p>
+                <input type="hidden" id="changeRoleUserId">
+                <div class="mb-3">
+                    <label class="form-label">Chọn vai trò</label>
+                    <select id="changeRoleSelect" class="form-select">
+                        @foreach (var role in roles)
+                        {
+                            <option value="@role.id">@role.name - @role.description</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" onclick="confirmChangeRole()">
+                    <i class="fas fa-save me-2"></i>Lưu
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Xác nhận xóa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc chắn muốn xóa người dùng "<strong id="deleteUserName"></strong>"?</p>
+                <p class="text-danger mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Hành động này không thể hoàn tác!</p>
+                <input type="hidden" id="deleteUserId">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDeleteUser()">
+                    <i class="fas fa-trash me-2"></i>Xóa
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function changeRole(id, name, currentRoleId) {
+            document.getElementById('changeRoleUserId').value = id;
+            document.getElementById('changeRoleUserName').textContent = name;
+            document.getElementById('changeRoleSelect').value = currentRoleId;
+            new bootstrap.Modal(document.getElementById('changeRoleModal')).show();
+        }
+
+        function confirmChangeRole() {
+            const userId = document.getElementById('changeRoleUserId').value;
+            const roleId = document.getElementById('changeRoleSelect').value;
+
+            fetch('/admin/users/update-role', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `userId=${userId}&roleId=${roleId}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.message);
+                }
+            });
+        }
+
+        function deleteUser(id, name) {
+            document.getElementById('deleteUserId').value = id;
+            document.getElementById('deleteUserName').textContent = name;
+            new bootstrap.Modal(document.getElementById('deleteUserModal')).show();
+        }
+
+        function confirmDeleteUser() {
+            const id = document.getElementById('deleteUserId').value;
+
+            fetch(`/admin/users/delete/${id}`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = '/admin/users';
+                } else {
+                    alert(data.message);
+                }
+            });
+        }
+    </script>
+}

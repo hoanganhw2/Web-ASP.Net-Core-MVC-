@@ -1,0 +1,596 @@
+﻿@using Microsoft.AspNetCore.Http
+@using BackEnd.Service
+@using BackEnd.Models
+@inject IHttpContextAccessor httpContextAccessor
+@inject ICartService cartService
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <link href="/favicon.png" rel="icon">
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/lib/fontawesome-free-6.7.2-web/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css">
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.theme.default.min.css">
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+    <style>
+        /* Wishlist Dropdown */
+        .wishlist-dropdown {
+            min-width: 350px;
+            max-width: 400px;
+            padding: 0;
+            border: none;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.15);
+        }
+        .wishlist-dropdown .header-dropdown-content {
+            padding: 0;
+        }
+        .wishlist-dropdown .wishlist-header {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+            color: white;
+        }
+        .wishlist-dropdown .wishlist-header h6 {
+            color: white;
+        }
+        .wishlist-dropdown .wishlist-view-scroll {
+            padding: 10px;
+        }
+        .wishlist-dropdown .table-clone-cart {
+            width: 100%;
+        }
+        .wishlist-dropdown .table-clone-cart tr {
+            border-bottom: 1px solid #eee;
+        }
+        .wishlist-dropdown .table-clone-cart td {
+            padding: 8px 5px;
+        }
+        .wishlist-dropdown .pro-title-view {
+            font-size: 13px;
+            color: #333;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .wishlist-dropdown .pro-price-view {
+            font-size: 12px;
+        }
+        /* Wishlist Page */
+        .wishlist-page .wishlist-item-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .wishlist-page .wishlist-item-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        }
+        .wishlist-page .wishlist-item-card .card-title {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            font-size: 14px;
+            min-height: 40px;
+        }
+        /* Search Dropdown */
+        .search-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 40px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            display: none;
+            z-index: 1000;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .search-dropdown.show {
+            display: block;
+        }
+        .search-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+            text-decoration: none;
+            color: #333;
+            transition: background 0.2s;
+        }
+        .search-item:hover {
+            background: #f5f5f5;
+        }
+        .search-item img {
+            width: 50px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-right: 12px;
+        }
+        .search-item-info {
+            flex: 1;
+        }
+        .search-item-name {
+            font-size: 13px;
+            margin-bottom: 4px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .search-item-price {
+            font-size: 12px;
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .search-item-price .old-price {
+            color: #999;
+            text-decoration: line-through;
+            font-weight: normal;
+            margin-right: 5px;
+        }
+        .search-no-result {
+            padding: 20px;
+            text-align: center;
+            color: #999;
+        }
+        .search-view-all {
+            display: block;
+            padding: 12px;
+            text-align: center;
+            background: #f8f9fa;
+            color: #0d6efd;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .search-view-all:hover {
+            background: #0d6efd;
+            color: white;
+        }
+    </style>
+
+</head>
+<body>
+    
+   <!--Header-->
+    <header class="header">
+        <!--Topbar -->
+        <div class="topbar">
+            <div class="container-fluid container-xl">
+                <div class="topbar-wrap d-flex align-items-center justify-content-between">
+                    <div class="header-contact d-none d-lg-flex flex-grow-1">
+                        <div class="item d-flex align-items-center">
+                            <div class="icon">
+                                <i class="fal fa-solid fa-phone"></i>
+                            </div>
+                            <div class="info">
+                                <a>+84 999 999 999</a>
+                            </div>
+                        </div>
+                        <div class="item d-flex align-items-center">
+                            <div class="icon">
+                                <i class="fal fa-solid fa-envelope"></i>
+                            </div>
+                            <div class="info">
+                                <a>+hotro@vinabook.com</a>
+                            </div>
+                        </div>
+                        <div class="item d-flex align-items-center">
+                            <div class="icon">
+                                <i class="fal fa-solid fa-location-dot"></i>
+                            </div>
+                            <div class="info">
+                                <a>Nam Từ Liêm, Hà Nội</a>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        <!--Main header -->
+        <div class="main-header ">
+            <div class="container-fluid container-xl">
+                <div class="d-flex align-items-center justify-content-between py-3">
+                    <!--Logo-->
+                    <div class="logo">
+                        <a href="/">
+                            <img class="img img-fluid img-thumbnail" src="~/img/logo.png"
+                                 alt="logo">
+                        </a>
+                    </div>
+                    <!--Search form-->
+                    <div class="searh-form desktop-search-form">
+                        <form action="/products" method="get" id="searchForm">
+                            <div class="input-group position-relative">
+                                <input type="text" class="form-control" id="searchInput" name="q" 
+                                       placeholder="Tìm kiếm sản phẩm..." autocomplete="off">
+                                <button id="searchBtn" type="submit" class="input-group-text btn">
+                                    <i class="fa-solid fa-magnifying-glass text-white" style="font-size: 16px;"></i>
+                                </button>
+                                <!-- Search Dropdown -->
+                                <div class="search-dropdown" id="searchDropdown">
+                                    <div class="search-results"></div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!--Mobile search-->
+                    <div class="mobile-search d-lg-none">
+                        <button class="btn">
+                            <i class="fa-solid fa-magnifying-glass " style="font-size: 20px;color:var(--btn)"></i>
+                        </button>
+                    </div>
+                    @{
+                        var fullname = httpContextAccessor.HttpContext?.Session.GetString("fullname");
+                        var userid = httpContextAccessor.HttpContext?.Session.GetInt32("id");
+                    }
+                    <!--Actions-->
+                    <div class="header-actions d-flex align-items-center">
+                        <!--Account-->
+                        <div class="account btn-group dropup">
+                            <button class="btn" type="button" id="dropdownAccount" data-bs-toggle="dropdown"
+                                    aria-expanded="false">
+                                <i class="fa-solid fa-user"></i>
+                            </button>
+                            <div class="dropdown-menu" aria-labelledby="dropdownAccount">
+                                <div class="dropdown-header">
+                                    <h6>Chào mừng đến với hiệu sách</h6>
+                                </div>
+                                @if (userid != null) {
+                                <div class="dropdown-body">
+                                    <div class="dropdown-item">Xin chào <span class="text-warning">@fullname</span></div>
+                                    <a href="/orders" class="dropdown-item">Đơn hàng</a>
+                                    <a href="/discounts" class="dropdown-item">Mã giảm giá</a>
+                                    <a href="/wishlist" class="dropdown-item">Sản phẩm yêu thích</a>                                   
+                                </div>
+                                <div class="dropdown-footer ">
+                                    <a asp-action="logout" asp-controller="users" class=" btn btn-primary">Đăng xuất</a>                                
+                                </div>
+                                }else{
+                                <div class="dropdown-footer ">
+                                    <a asp-action="login" asp-controller="users" class=" btn btn-primary">Đăng nhập</a>
+                                    <a asp-action="register" asp-controller="users"  class="btn btn-outline-primary">Đăng ký</a>
+                                </div> 
+                                }
+                        </div>
+                        <!--wishlist & cart-->
+                        @{
+                            var cartItems = cartService.GetCart();
+                            var cartCount = cartService.GetCartCount();
+                            var cartTotal = cartService.GetCartTotal();
+                            var wishlistService = Context.RequestServices.GetService<BackEnd.Service.IWishlistService>();
+                            var wishlistItems = wishlistService?.GetWishlist() ?? new List<BackEnd.Models.WishlistItem>();
+                            var wishlistCount = wishlistService?.GetWishlistCount() ?? 0;
+                        }
+                      
+                        <div class="wishlist">
+                            <button class="btn" type="button" id="dropdownWishlist" data-bs-toggle="dropdown"
+                                    aria-expanded="false">
+                                <i class="fa-solid fa-heart"></i>
+                                <span class="bage wishlist-bage">@wishlistCount</span>
+                            </button>
+                            <div class="wishlist-dropdown dropdown-menu dropdown-menu-end" id="wishlist-dropdown-content">
+                                @await Html.PartialAsync("_WishlistDropdown", wishlistItems)
+                            </div>
+                        </div>
+                        
+                        <!--cart - hiển thị cho tất cả người dùng-->
+                        <div class="cart">
+                            <button class="btn" type="button" id="dropdownCart" data-bs-toggle="dropdown"
+                                    aria-expanded="false">
+                                <i class="fa-solid fa-shopping-cart"></i>
+                                <span class="bage">@cartCount</span>
+                            </button>
+                            <div class="cart-dropdown dropdown-menu dropdown-menu-end" id="cart-dropdown-content">
+                                @await Html.PartialAsync("_CartDropdown", cartItems)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+     </div>
+        
+       </header>
+   <!--End Header-->
+   
+   <!--Content-->
+    @RenderBody()
+       
+   <!--End Content-->
+            
+
+  <!--Footer-->
+  <partial name="_Footer" ></partial>
+  <!--EndFooter-->
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        $(document).ready(function () {
+            $(".owl-carousel").each(function () {
+                var $element = $(this);
+
+                var config = {
+                    autoplay: $element.data('auto-play') || false,
+                    autoplayTimeout: $element.data('autoplay-timeout') || 5000,
+                    dots: $element.data('dot') || false,
+                    nav: $element.data('nav') || false,
+                    loop: $element.data('loop') || true,
+                    margin: $element.data('margin') || 0,
+                    navText: [
+                        '<i class="fa-solid fa-angle-left"></i>',
+                        '<i class="fa-solid fa-angle-right"></i>'
+                    ],
+                    responsive: {
+                        0: {
+                            items: $element.data('xs-items') || 1
+
+                        },
+                        576: {
+                            items: $element.data('sm-items') || 1
+                        },
+                        768: {
+                            items: $element.data('md-items') || 1
+                        },
+                        1200: {
+                            items: $element.data('lg-items') || 1
+                        }
+
+                    }
+                }
+                $element.owlCarousel(config);
+            });
+        });
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script>
+        // Cấu hình Toastr
+        toastr.options = {
+            "closeButton": true,
+            "progressBar": true,
+            "positionClass": "toast-top-right",
+            "timeOut": "3000",
+            "extendedTimeOut": "1000"
+        };
+
+        // Hàm refresh dropdown giỏ hàng (global để các trang khác có thể gọi)
+        function refreshCartDropdown() {
+            $.ajax({
+                url: '/cart/dropdown-html',
+                type: 'GET',
+                success: function(html) {
+                    $('#cart-dropdown-content').html(html);
+                }
+            });
+        }
+
+        // Hàm cập nhật badge số lượng giỏ hàng (global)
+        function updateCartBadge(count) {
+            var cartBadge = $('.cart .bage');
+            if (cartBadge.length) {
+                cartBadge.text(count);
+            }
+        }
+
+        // Xử lý nút xóa sản phẩm trong dropdown giỏ hàng (event delegation)
+        $(document).on('click', '.btn-remove-dropdown', function(e) {
+            e.preventDefault();
+            e.stopPropagation(); // Ngăn dropdown đóng lại
+            
+            var bookId = $(this).data('book-id');
+            var btn = $(this);
+            
+            $.ajax({
+                url: '/cart/remove-ajax',
+                type: 'POST',
+                data: { bookId: bookId },
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+                        // Cập nhật badge
+                        updateCartBadge(response.cartCount);
+                        // Refresh dropdown
+                        refreshCartDropdown();
+                    } else {
+                        toastr.error('Có lỗi xảy ra!');
+                    }
+                },
+                error: function() {
+                    toastr.error('Không thể xóa sản phẩm!');
+                }
+            });
+        });
+
+        // Xử lý nút đóng dropdown giỏ hàng
+        $(document).on('click', '.btn-close-dropdown', function(e) {
+            e.preventDefault();
+            // Đóng dropdown Bootstrap
+            $('#dropdownCart').dropdown('hide');
+        });
+
+        // ============ WISHLIST HANDLERS ============
+        
+        // Hàm refresh dropdown wishlist (global)
+        function refreshWishlistDropdown() {
+            $.ajax({
+                url: '/wishlist/dropdown-html',
+                type: 'GET',
+                success: function(html) {
+                    $('#wishlist-dropdown-content').html(html);
+                }
+            });
+        }
+
+        // Hàm cập nhật badge wishlist (global)
+        function updateWishlistBadge(count) {
+            var wishlistBadge = $('.wishlist .wishlist-bage');
+            if (wishlistBadge.length) {
+                wishlistBadge.text(count);
+            }
+        }
+
+        // Xử lý nút xóa sản phẩm trong dropdown wishlist
+        $(document).on('click', '.btn-remove-wishlist', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            var bookId = $(this).data('book-id');
+            
+            $.ajax({
+                url: '/wishlist/remove-ajax',
+                type: 'POST',
+                data: { bookId: bookId },
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+                        updateWishlistBadge(response.wishlistCount);
+                        refreshWishlistDropdown();
+                    } else {
+                        toastr.error('Có lỗi xảy ra!');
+                    }
+                },
+                error: function() {
+                    toastr.error('Không thể xóa sản phẩm!');
+                }
+            });
+        });
+
+        // Xử lý nút thêm vào giỏ từ wishlist
+        $(document).on('click', '.btn-add-cart-from-wishlist', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            var bookId = $(this).data('book-id');
+            
+            $.ajax({
+                url: '/cart/add-ajax',
+                type: 'POST',
+                data: { bookId: bookId, quantity: 1 },
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success('Đã thêm vào giỏ hàng!');
+                        updateCartBadge(response.cartCount);
+                        refreshCartDropdown();
+                    } else {
+                        toastr.error('Có lỗi xảy ra!');
+                    }
+                },
+                error: function() {
+                    toastr.error('Không thể thêm vào giỏ hàng!');
+                }
+            });
+        });
+
+        // Xử lý nút đóng dropdown wishlist
+        $(document).on('click', '.btn-close-wishlist', function(e) {
+            e.preventDefault();
+            $('#dropdownWishlist').dropdown('hide');
+        });
+
+        // Hàm thêm vào wishlist (global)
+        function addToWishlist(bookId) {
+            $.ajax({
+                url: '/wishlist/add-ajax',
+                type: 'POST',
+                data: { bookId: bookId },
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+                        updateWishlistBadge(response.wishlistCount);
+                        refreshWishlistDropdown();
+                    } else {
+                        toastr.error('Có lỗi xảy ra!');
+                    }
+                },
+                error: function() {
+                    toastr.error('Không thể thêm vào yêu thích!');
+                }
+            });
+        }
+
+        // ============ SEARCH AUTOCOMPLETE ============
+        var searchTimeout;
+        var searchDropdown = $('#searchDropdown');
+        var searchInput = $('#searchInput');
+        
+        searchInput.on('input', function() {
+            var query = $(this).val().trim();
+            
+            clearTimeout(searchTimeout);
+            
+            if (query.length < 2) {
+                searchDropdown.removeClass('show');
+                return;
+            }
+            
+            searchTimeout = setTimeout(function() {
+                $.ajax({
+                    url: '/products/search-ajax',
+                    type: 'GET',
+                    data: { q: query },
+                    success: function(response) {
+                        if (response.success && response.products.length > 0) {
+                            var html = '';
+                            response.products.forEach(function(p) {
+                                var imageSrc = p.image ? '/img/product/' + p.image : '/img/default-book.jpg';
+                                var priceHtml = '';
+                                if (p.priceDiscount < p.price) {
+                                    priceHtml = '<span class="old-price">' + formatNumber(p.price) + 'đ</span>' + 
+                                                formatNumber(p.priceDiscount) + 'đ';
+                                } else {
+                                    priceHtml = formatNumber(p.price) + 'đ';
+                                }
+                                html += '<a href="/products/' + p.id + '" class="search-item">' +
+                                    '<img src="' + imageSrc + '" alt="' + p.name + '">' +
+                                    '<div class="search-item-info">' +
+                                    '<div class="search-item-name">' + p.name + '</div>' +
+                                    '<div class="search-item-price">' + priceHtml + '</div>' +
+                                    '</div></a>';
+                            });
+                            html += '<a href="/products?q=' + encodeURIComponent(query) + '" class="search-view-all">' +
+                                    '<i class="fa-solid fa-search me-1"></i>Xem tất cả kết quả</a>';
+                            searchDropdown.find('.search-results').html(html);
+                            searchDropdown.addClass('show');
+                        } else {
+                            searchDropdown.find('.search-results').html(
+                                '<div class="search-no-result">Không tìm thấy sản phẩm</div>'
+                            );
+                            searchDropdown.addClass('show');
+                        }
+                    }
+                });
+            }, 300);
+        });
+
+        // Format số
+        function formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        // Đóng dropdown khi click ra ngoài
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('.searh-form').length) {
+                searchDropdown.removeClass('show');
+            }
+        });
+
+        // Focus lại hiện dropdown nếu có nội dung
+        searchInput.on('focus', function() {
+            if (searchDropdown.find('.search-results').html().trim()) {
+                searchDropdown.addClass('show');
+            }
+        });
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

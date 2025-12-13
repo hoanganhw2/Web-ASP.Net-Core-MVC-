@@ -1,0 +1,553 @@
+﻿@using BackEnd.Models.Entity
+@using System.Linq
+@model List<Category>
+@{
+    ViewData["Title"] = "Chào mừng đến với hiệu sách";
+    var categories = ViewBag.Categories as List<Category>;
+    var books = ViewBag.Books as List<Book>;
+    var booksMoney = ViewBag.BooksMoney as List<Book>;
+    var booksSpecialized = ViewBag.BooksSpecialized as List<Book>;
+    var booksChildren = ViewBag.BooksChildren as List<Book>;
+    var topSellingBooks = ViewBag.TopSellingBooks as List<Book> ?? new List<Book>();
+}
+
+<div class="container-fluid container-xl">
+    <div class="row pt-4">
+        <div class="col-12 col-lg-3">
+            <div class="sidebar">
+                <div class="widget widget-menu d-none d-md-block">
+                    <h3 class="sidebar-title">Danh mục</h3>
+                    <div class="sidebar-menu">
+                        <ul>
+                            @foreach(var category in categories)
+                            {
+                                <li class="has-child dropdown megamenu">
+                                    <a href="/products?category=@category.Id" style="color:#000">
+                                        @category.Name
+                                        <i class="fa-solid fa-angle-right"></i>
+                                    </a>
+
+                                    <ul>
+                                        @foreach(var subcategory in category.subCategories )
+                                        {
+                                            <li class="haschild"><a href="/products?subcategory=@subcategory.Id" style="color:#000">@subcategory.Name</a></li>
+                                        }
+                                    </ul>
+
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+ 
+                <div class="widget widget-banner banner-effect">
+                    <a>
+                        <img class="img img-fluid img-thumbnail"
+                             src="https://theme.hstatic.net/200000845405/1001223012/14/widget_banner.jpg?v=453"
+                             alt="anh" />
+                        <span class="hover hover1"></span>
+                        <span class="hover hover2"></span>
+                        <span class="hover hover3"></span>
+                        <span class="hover hover4"></span>
+                    </a>
+                </div>
+                <div class="widget widget-collection mb-30">
+                    <div class="widget-title">
+                        Sách mới bán chạy
+                    </div>
+                    <div class="widget-collection-list">
+                        @if (topSellingBooks.Count == 0)
+                        {
+                            <div class="text-muted text-center py-3">
+                                <small>Chưa có dữ liệu bán hàng</small>
+                            </div>
+                        }
+                        else
+                        {
+                            @foreach (var book in topSellingBooks.Take(3))
+                            {
+                                var discountPercent = book.Price > 0 
+                                    ? (int)Math.Round((1 - (book.Price_Discount / book.Price)) * 100)
+                                    : 0;
+                                var bookImage = book.Images?.FirstOrDefault();
+                                var bookImagePath = bookImage != null 
+                                    ? Url.Content("~/img/product/" + bookImage.Path)
+                                    : Url.Content("~/img/default-book.jpg");
+                                    
+                                <div class="product-item-mini d-flex align-items-center py-2">
+                                    <div class="product-img" style="border: none;">
+                                        @if (discountPercent > 0)
+                                        {
+                                            <div class="product-sale" style="background: #f03737;">
+                                                <span>-@discountPercent%</span>
+                                            </div>
+                                        }
+                                        <a href="/products/@book.Id">
+                                            <img src="@bookImagePath" class="img-thumbnail" style="max-height:100px" />
+                                        </a>
+                                    </div>
+                                    <div class="product-content">
+                                        <h3 class="product-title">
+                                            <a href="/products/@book.Id">@book.Name</a>
+                                        </h3>
+                                        <div class="box-pro-prices">
+                                            <p class="pro-price highlight">
+                                                <span class="current-price">@String.Format("{0:N0}₫", book.Price_Discount)</span>
+                                                @if (book.Price > book.Price_Discount)
+                                                {
+                                                    <del class="compare-price">
+                                                        @String.Format("{0:N0}₫", book.Price)
+                                                    </del>
+                                                }
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-lg-9">
+            <div id="home-slider" class="mb-3">
+                <div class="owl-carousel owl-theme owl-nav-style-3 dark owl-loaded owl-drag" data-auto-play="true"
+                     data-autoplay-timeout="3000" data-lg-items="1" data-sm-items="1" data-md-items="1"
+                     data-xs-items="1" data-dot="false" data-nav="true">
+                    <div class="owl-stage-outer">
+                        <div class="owl-stage">
+                            <div class="owl-item cloned">
+                                <div class="item">
+                                    <div class="image">
+                                        <a href="#">
+                                            <img src="~/img/home_slider_image_4.jpg" alt="Lỗi"/>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="owl-item cloned">
+                                <div class="item">
+                                    <div class="image">
+                                        <a>
+                                            <img src="~/img/home_slider_image_4.jpg" alt="Lỗi 1" />
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="owl-nav">
+                        <button type="button" role="presentation" class="owl-prev">
+                            <i class="fa-solid fa-angle-left"></i>
+                        </button>
+                        <button type="button" role="presentation" class="owl-next">
+                            <i class="fa-solid fa-angle-right"></i>
+                        </button>
+                    </div>
+                    <div class="owl-dots"></div>
+                </div>
+            </div>
+            <section class="home-two-banner home-section-mg">
+                <div class="row">
+                    <div class="cold-12 col-md-6">
+                        <div class="item banner-effect">
+                            <a>
+                                <img class="img  img-fluid img-thumbnail" src="~/img/img-banner1.jpg"
+                                     alt="thái bạch" style="border: none;">
+                            </a>
+                            <span class="hover hover1"></span>
+                            <span class="hover hover2"></span>
+                            <span class="hover hover3"></span>
+                            <span class="hover hover4"></span>
+                        </div>
+                    </div>
+                    <div class="cold-12 col-md-6">
+                        <div class="item banner-effect">
+                            <a>
+                                <img class="img img-fluid img-thumbnail" src="~/img/img-banner2.jpg"
+                                     alt="thái bạch" style="border: none;">
+                            </a>
+                            <span class="hover hover1"></span>
+                            <span class="hover hover2"></span>
+                            <span class="hover hover3"></span>
+                            <span class="hover hover4"></span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <section class="home-tab-product mb-30">
+                <div class="inner">
+                    <div class="htp-tabs-wrapper">
+                        <div class="htp-tablinks">
+                            <button class="htp-tablink active">Sách Mới Nổi Bật</button>
+                            <button class="htp-tablink">Sách Khuyến Mãi</button>
+                        </div>
+                        <div class="htp-tabcontents section-box-lg">
+                            <div class="htp-tabcontent active">
+                                <div class="row">
+                                    <!--Product 1-->
+                                    @foreach (var book in books)
+                                    {
+                                        <div class="col-6 col-md-4 col-lg-3">
+                                            <div class="product-item">
+                                                <div class="product-img" style="border:none;">
+                                                    <div class="product-sale" style="background: #f03737;">
+
+                                                        @{
+                                                            var percent = book.Price > 0 
+                                                                ? "-" + (int)Math.Round((1 - (book.Price_Discount / book.Price)) * 100) + "%"
+                                                                : "0%";
+                                                        }
+                                                        <span>@percent</span>
+                                                    </div>
+                                                    <a href="/products/@book.Id">
+                                                        @{
+                                                            var images = book.Images?.FirstOrDefault();
+                                                            var ImagePath = images != null 
+                                                                ? Url.Content("~/img/product/" + images.Path)
+                                                                : Url.Content("~/img/default-book.jpg");
+                                                        }
+                                                        <img class="img img-thumbnail img-fluid"
+                                                             src="@ImagePath" />
+                                                    </a>
+                                                    <div class="button-add d-none d-md-flex">
+                                                        <button type="button" class="btn-add-wishlist" data-book-id="@book.Id" data-tooltip="Thêm yêu thích">
+                                                            <i class="fa-solid fa-heart"></i>
+                                                        </button>
+                                                        <button type="button" class="btn-add-cart" data-book-id="@book.Id" data-tooltip="Thêm vào giỏ">
+                                                            <i class="fa-solid fa-cart-shopping"></i>
+                                                        </button>
+                                                        <a href="/products/@book.Id" data-tooltip="Xem chi tiết">
+                                                            <i class="fa-solid fa-eye"></i>
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                                <div class="product-detail">
+                                                    <h3 class="proname">
+                                                        @book.Name
+                                                    </h3>
+                                                    <p class="pro-price highlight">
+                                                        <span class="current-price">
+                                                            @String.Format("{0:N0}", @book.Price_Discount) đ                                                         
+                                                            </span>
+                                                        <del class="compare-price">
+                                                            @String.Format("{0:N0}",book.Price) đ
+                                                        </del>
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                    <!--End product1-->
+                                   
+                                </div>
+                            </div>
+                            <div class="htp-tabcontent">
+                                <div class="col-6 col-md-4 col-lg-3">
+                                    <div class="product-item">
+                                        <div class="product-img" style="border:none;">
+                                            <div class="product-sale" style="background: #f03737;">
+                                                <span>-20%</span>
+                                            </div>
+                                            <a href="#">
+                                                <img class="img img-thumbnail img-fluid"
+                                                     src="~/img/product1.jpg" />
+                                            </a>
+                                            <div class="button-add d-none d-md-flex">
+                                                <button type="button" data-tooltip="Xem nhanh">
+                                                    <i class="fa-solid fa-magnifying-glass-plus"></i>
+                                                </button>
+                                                <button type="button" data-tooltip="Thêm vào giỏ">
+                                                    <i class="fa-solid fa-cart-shopping"></i>
+                                                </button>
+                                                <a data-tooltip="Xem nhanh">
+                                                    <i class="fa-solid fa-eye"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+                                        <div class="product-detail">
+                                            <h3 class="proname">
+                                                Nằm Ngủ Ngoài Triền Đê sdadddsad sadsadadsad
+                                            </h3>
+                                            <p class="pro-price highlight">
+                                                <span class="currennt-price">113,600đ</span>
+                                                <del class="compare-price">142,000đ</del>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <section class="home-two-banner home-section-mg">
+                <div class="row">
+                    <div class="col-12 col-md-3">
+                        <div class="item banner-effect">
+                            <img src="~/img/col2_htb_img_1.jpg" class="img img-fluid img-thumbnail "
+                                 style="padding: 0;" />
+                            <span class="hover hover1"></span>
+                            <span class="hover hover2"></span>
+                            <span class="hover hover3"></span>
+                            <span class="hover hover4"></span>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-9">
+                        <div class="item banner-effect">
+                            <img src="~/img/col2_htb_img_2.jpg" class="img img-fluid img-thumbnail "
+                                 style="padding:0" />
+                            <span class="hover hover1"></span>
+                            <span class="hover hover2"></span>
+                            <span class="hover hover3"></span>
+                            <span class="hover hover4"></span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <section class="home-featured-product mb-30">
+                <div class="section-heading">
+                    <h3 class="section-title">
+                        <span>Sách thiếu nhi</span>
+                    </h3>
+                </div>
+                <div class="section-box-bg">
+                    <div class="owl-carousel owl-theme owl-nav-style-1 owl-loaded owl-drag" data-auto-play="false"
+                         data-lg-items="4" data-md-items="4" data-sm-items="3" data-xs-items="2" data-dot="false"
+                         data-nav="true">
+                        @foreach (var item in booksSpecialized)
+                        {
+                            <div class="item">
+                                <div class="product-item">
+                                    <div class="product-img" style="border: none;">
+                                        <div class="product-sale" style="background-color: #f03737;">
+                                            @{
+                                                var percentSpecialized = item.Price > 0 
+                                                    ? "-" + (int)Math.Round((1 - (item.Price_Discount / item.Price)) * 100) + "%"
+                                                    : "0%";
+                                            }
+                                            <span>@percentSpecialized</span>
+                                        </div>
+                                        <a href="/products/@item.Id">
+                                            @{
+                                                var imagesSpecialized = item.Images?.FirstOrDefault();
+                                                var ImagePathSpecialized = imagesSpecialized != null 
+                                                    ? Url.Content("~/img/product/" + imagesSpecialized.Path)
+                                                    : Url.Content("~/img/default-book.jpg");
+                                            }
+                                            <img src="@ImagePathSpecialized" />
+                                        </a>
+                                        <div class="button-add d-none d-md-flex">
+                                            <button type="button" class="btn-add-wishlist" data-book-id="@item.Id" data-tooltip="Thêm yêu thích">
+                                                <i class="fa-solid fa-heart"></i>
+                                            </button>
+                                            <button type="button" class="btn-add-cart" data-book-id="@item.Id" data-tooltip="Thêm vào giỏ">
+                                                <i class="fa-solid fa-cart-shopping"></i>
+                                            </button>
+                                            <a href="/products/@item.Id" data-tooltip="Xem chi tiết">
+                                                <i class="fa-solid fa-eye"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="product-detail">
+                                        <h3 class="pro-name">
+                                            <a>@item.Name</a>
+                                        </h3>
+                                        <p class="pro-price highlight">
+                                            <span class="current-price">
+                                                @String.Format("{0:N0}", item.Price_Discount) đ
+                                            </span>
+                                            <del class="compare-price">
+                                                @String.Format("{0:N0}", item.Price) đ
+                                            </del>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </section>
+            <section class="home-featured-product mb-30">
+                <div class="section-heading">
+                    <h3 class="section-title">
+                        <span>Sách Kinh tế</span>
+                    </h3>
+                </div>
+                <div class="section-box-bg">
+                    <div class="owl-carousel owl-theme owl-nav-style-1 owl-loaded owl-drag" data-auto-play="false"
+                         data-lg-items="4" data-md-items="4" data-sm-items="3" data-xs-items="2" data-dot="false"
+                         data-nav="true">
+                        @foreach (var item in booksMoney)
+                        {
+                            <div class="item">
+                                <div class="product-item">
+                                    <div class="product-img" style="border: none;">
+                                        <div class="product-sale" style="background-color: #f03737;">
+                                            @{
+                                                var percentItem = item.Price > 0 
+                                                    ? "-" + (int)Math.Round((1 - (item.Price_Discount / item.Price)) * 100) + "%"
+                                                    : "0%";
+                                            }
+                                            <span>@percentItem</span>
+                                        </div>
+                                        <a href="/products/@item.Id">
+                                            @{
+                                                var imagesItem = item.Images?.FirstOrDefault();
+                                                var ImagePathItem = imagesItem != null 
+                                                    ? Url.Content("~/img/product/" + imagesItem.Path)
+                                                    : Url.Content("~/img/default-book.jpg");
+                                            }
+                                            <img src="@ImagePathItem" />
+                                        </a>
+                                        <div class="button-add d-none d-md-flex">
+                                            <button type="button" class="btn-add-wishlist" data-book-id="@item.Id" data-tooltip="Thêm yêu thích">
+                                                <i class="fa-solid fa-heart"></i>
+                                            </button>
+                                            <button type="button" class="btn-add-cart" data-book-id="@item.Id" data-tooltip="Thêm vào giỏ">
+                                                <i class="fa-solid fa-cart-shopping"></i>
+                                            </button>
+                                            <a href="/products/@item.Id" data-tooltip="Xem chi tiết">
+                                                <i class="fa-solid fa-eye"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="product-detail">
+                                        <h3 class="pro-name">
+                                            <a>@item.Name</a>
+                                        </h3>
+                                        <p class="pro-price highlight">
+                                            <span class="current-price">
+                                            @String.Format("{0:N0}", @item.Price_Discount) đ                                                         
+                                            </span>
+                                        <del class="compare-price">
+                                            @String.Format("{0:N0}",item.Price) đ
+                                        </del>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        
+                        
+                    </div>
+                </div>
+            </section>
+            <section class="home-featured-product mb-30">
+                <div class="section-heading">
+                    <h3 class="section-title">
+                        <span>Sách chuyên ngành</span>
+                    </h3>
+                </div>
+                <div class="section-box-bg">
+                    <div class="owl-carousel owl-theme owl-nav-style-1 owl-loaded owl-drag" data-auto-play="false"
+                         data-lg-items="4" data-md-items="4" data-sm-items="3" data-xs-items="2" data-dot="false"
+                         data-nav="true">
+                        @foreach (var item in booksChildren)
+                        {
+                            <div class="item">
+                                <div class="product-item">
+                                    <div class="product-img" style="border: none;">
+                                        <div class="product-sale" style="background-color: #f03737;">
+                                            @{
+                                                var percentChildren = item.Price > 0 
+                                                    ? "-" + (int)Math.Round((1 - (item.Price_Discount / item.Price)) * 100) + "%"
+                                                    : "0%";
+                                            }
+                                            <span>@percentChildren</span>
+                                        </div>
+                                        <a href="/products/@item.Id">
+                                            @{
+                                                var imagesChildren = item.Images?.FirstOrDefault();
+                                                var ImagePathChildren = imagesChildren != null 
+                                                    ? Url.Content("~/img/product/" + imagesChildren.Path)
+                                                    : Url.Content("~/img/default-book.jpg");
+                                            }
+                                            <img src="@ImagePathChildren" />
+                                        </a>
+                                        <div class="button-add d-none d-md-flex">
+                                            <button type="button" class="btn-add-wishlist" data-book-id="@item.Id" data-tooltip="Thêm yêu thích">
+                                                <i class="fa-solid fa-heart"></i>
+                                            </button>
+                                            <button type="button" class="btn-add-cart" data-book-id="@item.Id" data-tooltip="Thêm vào giỏ">
+                                                <i class="fa-solid fa-cart-shopping"></i>
+                                            </button>
+                                            <a href="/products/@item.Id" data-tooltip="Xem chi tiết">
+                                                <i class="fa-solid fa-eye"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="product-detail">
+                                        <h3 class="pro-name">
+                                            <a>@item.Name</a>
+                                        </h3>
+                                        <p class="pro-price highlight">
+                                            <span class="current-price">
+                                                @String.Format("{0:N0}", item.Price_Discount) đ
+                                            </span>
+                                            <del class="compare-price">
+                                                @String.Format("{0:N0}", item.Price) đ
+                                            </del>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </section>
+            <section class="home-featured-product mb-30">
+            </section>
+
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    $(document).ready(function() {
+        // Xử lý tất cả các nút thêm vào giỏ hàng
+        $('.btn-add-cart').on('click', function(e) {
+            e.preventDefault();
+            var bookId = $(this).data('book-id');
+            var btn = $(this);
+            
+            // Disable nút trong khi đang xử lý
+            btn.prop('disabled', true);
+            
+            $.ajax({
+                url: '/cart/add-ajax',
+                type: 'POST',
+                data: { bookId: bookId, quantity: 1 },
+                success: function(response) {
+                    if (response.success) {
+                        // Hiển thị toast thành công
+                        toastr.success(response.message);
+                        // Cập nhật số lượng giỏ hàng trên header
+                        updateCartBadge(response.cartCount);
+                        // Refresh dropdown giỏ hàng
+                        refreshCartDropdown();
+                    } else {
+                        toastr.error('Có lỗi xảy ra!');
+                    }
+                },
+                error: function() {
+                    toastr.error('Không thể thêm vào giỏ hàng!');
+                },
+                complete: function() {
+                    // Enable lại nút
+                    btn.prop('disabled', false);
+                }
+            });
+        });
+
+        // Xử lý nút thêm vào yêu thích
+        $('.btn-add-wishlist').on('click', function(e) {
+            e.preventDefault();
+            var bookId = $(this).data('book-id');
+            addToWishlist(bookId);
+        });
+    });
+</script>
+}

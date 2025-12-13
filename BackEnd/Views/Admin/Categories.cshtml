@@ -1,0 +1,239 @@
+@model List<BackEnd.Models.Entity.Category>
+@{
+    ViewData["Title"] = "Quản lý Danh mục";
+}
+
+<!-- Page Header -->
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="page-title">Quản lý Danh mục</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/admin">Admin</a></li>
+                <li class="breadcrumb-item active">Danh mục</li>
+            </ol>
+        </nav>
+    </div>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+        <i class="fas fa-plus me-2"></i>Thêm danh mục
+    </button>
+</div>
+
+<!-- Categories List -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title">Danh sách danh mục</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">ID</th>
+                        <th>Tên danh mục</th>
+                        <th>Thứ tự hiển thị</th>
+                        <th>Số danh mục con</th>
+                        <th style="width: 150px;">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">
+                                <i class="fas fa-folder-open fa-2x mb-2"></i><br>
+                                Chưa có danh mục nào
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var category in Model)
+                        {
+                            <tr>
+                                <td><strong>@category.Id</strong></td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="icon me-3" style="width: 40px; height: 40px; border-radius: 8px; background-color: rgba(79, 70, 229, 0.1); display: flex; align-items: center; justify-content: center;">
+                                            <i class="fas fa-folder" style="color: #4f46e5;"></i>
+                                        </div>
+                                        <div>
+                                            <strong>@category.Name</strong>
+                                            @if (category.subCategories != null && category.subCategories.Count > 0)
+                                            {
+                                                <div class="text-muted small">
+                                                    @string.Join(", ", category.subCategories.Select(s => s.Name).Take(3))
+                                                    @if (category.subCategories.Count > 3)
+                                                    {
+                                                        <span>...</span>
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>@category.DislayOrder</td>
+                                <td>
+                                    <span class="badge bg-info">@(category.subCategories?.Count ?? 0)</span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary btn-action me-1" 
+                                            onclick="editCategory(@category.Id, '@category.Name', @category.DislayOrder)"
+                                            title="Sửa">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger btn-action"
+                                            onclick="deleteCategory(@category.Id, '@category.Name')"
+                                            title="Xóa">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Category Modal -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="AddCategory" asp-controller="Admin" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title">Thêm danh mục mới</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Tên danh mục <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control" required placeholder="Nhập tên danh mục">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Thứ tự hiển thị</label>
+                        <input type="number" name="displayOrder" class="form-control" value="0" min="0">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Lưu
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Category Modal -->
+<div class="modal fade" id="editCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Sửa danh mục</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editCategoryId">
+                <div class="mb-3">
+                    <label class="form-label">Tên danh mục <span class="text-danger">*</span></label>
+                    <input type="text" id="editCategoryName" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Thứ tự hiển thị</label>
+                    <input type="number" id="editCategoryOrder" class="form-control" min="0">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" onclick="saveCategory()">
+                    <i class="fas fa-save me-2"></i>Cập nhật
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Xác nhận xóa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc chắn muốn xóa danh mục "<strong id="deleteCategoryName"></strong>"?</p>
+                <p class="text-danger mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Hành động này không thể hoàn tác!</p>
+                <input type="hidden" id="deleteCategoryId">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDeleteCategory()">
+                    <i class="fas fa-trash me-2"></i>Xóa
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function editCategory(id, name, order) {
+            document.getElementById('editCategoryId').value = id;
+            document.getElementById('editCategoryName').value = name;
+            document.getElementById('editCategoryOrder').value = order;
+            new bootstrap.Modal(document.getElementById('editCategoryModal')).show();
+        }
+
+        function saveCategory() {
+            const id = document.getElementById('editCategoryId').value;
+            const name = document.getElementById('editCategoryName').value;
+            const displayOrder = document.getElementById('editCategoryOrder').value;
+
+            fetch('/admin/categories/update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `id=${id}&name=${encodeURIComponent(name)}&displayOrder=${displayOrder}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                bootstrap.Modal.getInstance(document.getElementById('editCategoryModal')).hide();
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast(data.message, 'error');
+                }
+            });
+        }
+
+        function deleteCategory(id, name) {
+            document.getElementById('deleteCategoryId').value = id;
+            document.getElementById('deleteCategoryName').textContent = name;
+            new bootstrap.Modal(document.getElementById('deleteCategoryModal')).show();
+        }
+
+        function confirmDeleteCategory() {
+            const id = document.getElementById('deleteCategoryId').value;
+
+            fetch(`/admin/categories/delete/${id}`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                bootstrap.Modal.getInstance(document.getElementById('deleteCategoryModal')).hide();
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast(data.message, 'error');
+                }
+            });
+        }
+    </script>
+}

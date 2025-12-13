@@ -1,0 +1,85 @@
+@using BackEnd.Models
+@model List<CartItem>
+@{
+    var cartItems = Model ?? new List<CartItem>();
+    var cartTotal = ViewBag.CartTotal as double? ?? 0;
+}
+<div class="header-dropdown-content">
+    <div class="site-cart">
+        <div class="cart-header d-flex justify-content-between align-items-center p-2 border-bottom">
+            <h6 class="mb-0">Giỏ hàng</h6>
+            <button type="button" class="btn-close-dropdown" style="background:none;border:none;cursor:pointer;" title="Đóng">
+                <i class="fa-solid fa-xmark fs-5"></i>
+            </button>
+        </div>
+        <div class="cart-view clearfix">
+            <div class="cart-view-scroll">
+                @if (cartItems.Count == 0)
+                {
+                    <p class="text-center py-3">Giỏ hàng trống</p>
+                }
+                else
+                {
+                    <table class="table-clone-cart">
+                        <tbody>
+                            @foreach (var item in cartItems)
+                            {
+                                <tr>
+                                    <td class="img">
+                                        <a href="/products/@item.BookId">
+                                            <img src="~/img/product/@item.ImagePath" alt="@item.BookName"
+                                                 style="width: 80px; height: auto;">
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <p class="pro-title">
+                                            <a class="pro-title-view" href="/products/@item.BookId">@item.BookName</a>
+                                        </p>
+                                        <div class="mini-cart_quantity">
+                                            <div class="pro-quantity-view">
+                                                <span class="qty-value">@item.Quantity</span>
+                                            </div>
+                                            <div class="pro-price-view">
+                                                @String.Format("{0:N0}", item.Price)đ
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="remove-col" style="vertical-align: middle;">
+                                        <button type="button" class="btn-remove-dropdown" data-book-id="@item.BookId" style="background:none;border:none;cursor:pointer;" title="Xóa sản phẩm">
+                                            <i class="fa-solid fa-trash text-danger"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+            <div class="line"></div>
+            <div class="cart-view-total">
+                <table class="table-total">
+                    <tbody>
+                        <tr>
+                            <td class="text-left">TỔNG TIỀN :</td>
+                            <td class="text-right" id="total-view-cart">@String.Format("{0:N0}", cartTotal)đ</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <a href="/cart"
+                                   class="linktocart btn btn-primary btn-sm text-uppercase">
+                                    Xem giỏ hàng
+                                </a>
+                            </td>
+                            <td>
+                                <a href="/checkout" style="float: right;"
+                                   class="linktocart btn btn-primary btn-sm text-uppercase">
+                                    Thanh toán
+                                </a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

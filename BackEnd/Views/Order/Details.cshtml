@@ -1,0 +1,300 @@
+@using BackEnd.Models.Entity
+@using BackEnd.Controllers
+@model Order
+@{
+    ViewData["Title"] = "Chi tiết đơn hàng #" + Model.Id;
+}
+
+<style>
+    .order-details-page .card {
+        border: none;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .order-details-page .card-header {
+        background: linear-gradient(135deg, #417505, #539409) !important;
+        color: white;
+        padding: 15px 20px;
+        border: none;
+    }
+    .order-details-page .card-header h5 {
+        color: white !important;
+        margin: 0;
+        font-weight: 600;
+    }
+    .order-details-page .card-body {
+        padding: 20px;
+    }
+    .order-details-page .info-item {
+        padding: 12px 0;
+        border-bottom: 1px dashed #eee;
+    }
+    .order-details-page .info-item:last-child {
+        border-bottom: none;
+    }
+    .order-details-page .info-label {
+        color: #666;
+        font-size: 13px;
+        margin-bottom: 4px;
+    }
+    .order-details-page .info-value {
+        font-weight: 500;
+        color: #333;
+    }
+    .order-details-page .table th {
+        background: #f8f9fa;
+        font-weight: 600;
+        color: #555;
+        border: none;
+        padding: 12px 15px;
+    }
+    .order-details-page .table td {
+        vertical-align: middle;
+        padding: 15px;
+        border-color: #f0f0f0;
+    }
+    .order-details-page .product-img {
+        width: 70px;
+        height: 90px;
+        object-fit: cover;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .order-details-page .card-footer {
+        background: #fafafa;
+        border-top: 2px solid #417505;
+        padding: 20px;
+    }
+    .order-details-page .summary-table td {
+        padding: 8px 0;
+        border: none;
+    }
+    .order-details-page .total-row td {
+        padding-top: 15px !important;
+        font-size: 18px;
+    }
+    .order-status-badge {
+        padding: 8px 20px;
+        font-size: 14px;
+        border-radius: 50px;
+    }
+    .btn-back {
+        background: #f8f9fa;
+        border: 2px solid #417505;
+        color: #417505;
+        padding: 10px 25px;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.3s;
+    }
+    .btn-back:hover {
+        background: #417505;
+        color: white;
+    }
+    .btn-cancel {
+        background: linear-gradient(135deg, #dc3545, #c82333);
+        border: none;
+        color: white;
+        padding: 10px 25px;
+        border-radius: 8px;
+        font-weight: 500;
+    }
+</style>
+
+<div class="order-details-page">
+    <div class="breadcrumb-shop">
+        <div class="container">
+            <div class="row">
+                <div class="col-12">
+                    <ol class="breadcrumb breadcrumb-arrows">
+                        <li><a href="/">Trang chủ</a></li>
+                        <li><a href="/orders">Đơn hàng của tôi</a></li>
+                        <li class="active">Chi tiết đơn hàng #@Model.Id</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0" style="color: #417505;">
+                <i class="fa-solid fa-receipt me-2"></i>
+                Đơn hàng #@Model.Id
+            </h2>
+            <span class="badge order-status-badge @OrderController.GetStatusBadgeClass(Model.Status)">
+                <i class="fa-solid fa-circle-info me-1"></i>
+                @OrderController.GetStatusText(Model.Status)
+            </span>
+        </div>
+
+        <div class="row">
+            <!-- Thông tin đơn hàng -->
+            <div class="col-lg-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5><i class="fa-solid fa-info-circle me-2"></i>Thông tin đơn hàng</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="info-item">
+                            <div class="info-label"><i class="fa-solid fa-calendar me-2"></i>Ngày đặt</div>
+                            <div class="info-value">@Model.OrderDate.ToString("dd/MM/yyyy HH:mm")</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label"><i class="fa-solid fa-location-dot me-2"></i>Địa chỉ giao hàng</div>
+                            <div class="info-value">@Model.ShippingAddress</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label"><i class="fa-solid fa-phone me-2"></i>Số điện thoại</div>
+                            <div class="info-value">@Model.PhoneNumber</div>
+                        </div>
+                        @if (!string.IsNullOrEmpty(Model.Note))
+                        {
+                            <div class="info-item">
+                                <div class="info-label"><i class="fa-solid fa-sticky-note me-2"></i>Ghi chú</div>
+                                <div class="info-value fst-italic text-muted">@Model.Note</div>
+                            </div>
+                        }
+                        @if (Model.DiscountCode != null)
+                        {
+                            <div class="info-item">
+                                <div class="info-label"><i class="fa-solid fa-tag me-2"></i>Mã giảm giá</div>
+                                <div class="info-value">
+                                    <span class="badge bg-success px-3 py-2">@Model.DiscountCode.Code</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chi tiết sản phẩm -->
+            <div class="col-lg-8 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fa-solid fa-shopping-cart me-2"></i>Sản phẩm đã đặt</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 90px;"></th>
+                                        <th>Sản phẩm</th>
+                                        <th class="text-center">Đơn giá</th>
+                                        <th class="text-center">SL</th>
+                                        <th class="text-end">Thành tiền</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Model.OrderItems != null)
+                                    {
+                                        @foreach (var item in Model.OrderItems)
+                                        {
+                                            var imagePath = item.Book?.Images?.FirstOrDefault()?.Path ?? "default-book.jpg";
+                                            <tr>
+                                                <td>
+                                                    <a href="/products/@item.BookId">
+                                                        <img src="~/img/product/@imagePath" alt="@item.BookName" class="product-img">
+                                                    </a>
+                                                </td>
+                                                <td>
+                                                    <a href="/products/@item.BookId" class="text-dark text-decoration-none fw-medium">
+                                                        @item.BookName
+                                                    </a>
+                                                </td>
+                                                <td class="text-center text-muted">@String.Format("{0:N0}", item.Price)đ</td>
+                                                <td class="text-center"><span class="badge bg-secondary">@item.Quantity</span></td>
+                                                <td class="text-end fw-bold" style="color: #417505;">@String.Format("{0:N0}", item.Total)đ</td>
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="row">
+                            <div class="col-md-6 offset-md-6">
+                                <table class="table summary-table mb-0">
+                                    <tr>
+                                        <td class="text-muted">Tạm tính:</td>
+                                        <td class="text-end">@String.Format("{0:N0}", Model.SubTotal)đ</td>
+                                    </tr>
+                                    @if (Model.DiscountAmount > 0)
+                                    {
+                                        <tr>
+                                            <td class="text-success"><i class="fa-solid fa-tag me-1"></i>Giảm giá:</td>
+                                            <td class="text-end text-success">-@String.Format("{0:N0}", Model.DiscountAmount)đ</td>
+                                        </tr>
+                                    }
+                                    <tr>
+                                        <td class="text-muted">Phí vận chuyển:</td>
+                                        <td class="text-end">
+                                            @if (Model.ShippingFee > 0)
+                                            {
+                                                @String.Format("{0:N0}", Model.ShippingFee)<text>đ</text>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-success fw-medium">Miễn phí</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                    <tr class="total-row border-top">
+                                        <td class="fw-bold" style="color: #417505;">Tổng cộng:</td>
+                                        <td class="text-end fw-bold text-danger fs-5">@String.Format("{0:N0}", Model.TotalAmount)đ</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="d-flex justify-content-between mt-3">
+            <a href="/orders" class="btn btn-back">
+                <i class="fa-solid fa-arrow-left me-2"></i>Quay lại danh sách
+            </a>
+            @if (Model.Status == 0)
+            {
+                <button type="button" class="btn btn-cancel btn-cancel-order" data-order-id="@Model.Id">
+                    <i class="fa-solid fa-times me-2"></i>Hủy đơn hàng
+                </button>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    $(document).ready(function() {
+        $('.btn-cancel-order').on('click', function() {
+            var orderId = $(this).data('order-id');
+            
+            if (!confirm('Bạn có chắc chắn muốn hủy đơn hàng #' + orderId + '?')) {
+                return;
+            }
+            
+            $.ajax({
+                url: '/orders/cancel/' + orderId,
+                type: 'POST',
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+                        location.reload();
+                    } else {
+                        toastr.error(response.message);
+                    }
+                },
+                error: function() {
+                    toastr.error('Có lỗi xảy ra!');
+                }
+            });
+        });
+    });
+</script>
+}

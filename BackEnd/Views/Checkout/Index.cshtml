@@ -1,0 +1,213 @@
+@using BackEnd.Models
+@{
+    ViewData["Title"] = "Thanh toán";
+    var cartItems = ViewBag.CartItems as List<CartItem> ?? new List<CartItem>();
+    var cartTotal = ViewBag.CartTotal as double? ?? 0;
+    var shippingFee = ViewBag.ShippingFee as double? ?? 30000;
+    var user = ViewBag.User as BackEnd.Models.Entity.User;
+    var note = ViewBag.Note as string ?? "";
+}
+
+<div class="checkout-page">
+    <div class="breadcrumb-shop">
+        <div class="container">
+            <div class="row">
+                <div class="col-12">
+                    <ol class="breadcrumb breadcrumb-arrows">
+                        <li><a href="/">Trang chủ</a></li>
+                        <li><a href="/cart">Giỏ hàng</a></li>
+                        <li class="active">Thanh toán</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container py-4">
+        <h2 class="mb-4">Thanh toán đơn hàng</h2>
+        
+        <form id="checkoutForm" action="/checkout/place-order" method="post">
+            <div class="row">
+                <!-- Thông tin giao hàng -->
+                <div class="col-12 col-lg-7">
+                    <div class="card mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0 text-white"><i class="fa-solid fa-truck me-2 text-white"></i>Thông tin giao hàng</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="phoneNumber" class="form-label">Số điện thoại <span class="text-danger">*</span></label>
+                                <input type="tel" class="form-control" id="phoneNumber" name="phoneNumber" 
+                                       value="@(user?.phonenumber ?? "")" required placeholder="Nhập số điện thoại">
+                            </div>
+                            <div class="mb-3">
+                                <label for="shippingAddress" class="form-label">Địa chỉ giao hàng <span class="text-danger">*</span></label>
+                                <textarea class="form-control" id="shippingAddress" name="shippingAddress" 
+                                          rows="3" required placeholder="Nhập địa chỉ nhận hàng">@(user?.address ?? "")</textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="note" class="form-label">Ghi chú</label>
+                                <textarea class="form-control" id="note" name="note" rows="2" 
+                                          placeholder="Ghi chú cho đơn hàng (không bắt buộc)">@note</textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mã giảm giá -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0" style="color:black"><i class="fa-solid fa-tag me-2"></i>Mã giảm giá</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="discountCodeInput" name="discountCode" 
+                                       placeholder="Nhập mã giảm giá">
+                                <button type="button" class="btn btn-outline-primary" id="applyDiscountBtn">
+                                    Áp dụng
+                                </button>
+                            </div>
+                            <small id="discountMessage" ></small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Đơn hàng -->
+                <div class="col-12 col-lg-5">
+                    <div class="card sticky-top" style="top: 20px; z-index: 1;">
+                        <div class="card-header bg-dark text-white">
+                            <h5 class="mb-0 text-white"><i class="fa-solid fa-shopping-cart me-2 text-white"></i>Đơn hàng của bạn</h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- Danh sách sản phẩm -->
+                            <div class="order-items mb-3" style="max-height: 300px; overflow-y: auto;">
+                                @foreach (var item in cartItems)
+                                {
+                                    <div class="d-flex align-items-center mb-3 pb-3 border-bottom mt-3">
+                                        <div class="position-relative me-3">
+                                            <img src="~/img/product/@item.ImagePath" alt="@item.BookName" 
+                                                 style="width: 60px; height: 80px; object-fit: cover; border-radius: 4px;">
+                                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                                @item.Quantity
+                                            </span>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1" style="font-size: 14px;">@item.BookName</h6>
+                                            <small class="text-muted">@String.Format("{0:N0}", item.Price)đ x @item.Quantity</small>
+                                        </div>
+                                        <div class="text-end">
+                                            <strong>@String.Format("{0:N0}", item.Total)đ</strong>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+
+                            <!-- Tổng tiền -->
+                            <div class="order-summary">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Tạm tính:</span>
+                                    <span id="subTotal">@String.Format("{0:N0}", cartTotal)đ</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2" id="discountRow" style="display: none !important;">
+                                    <span>Giảm giá:</span>
+                                    <span class="text-success" id="discountAmount">-0đ</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Phí vận chuyển:</span>
+                                    <span id="shippingFee">@String.Format("{0:N0}", shippingFee)đ</span>
+                                </div>
+                                <hr>
+                                <div class="d-flex justify-content-between mb-3">
+                                    <strong>Tổng cộng:</strong>
+                                    <strong class="text-danger fs-5" id="totalAmount">@String.Format("{0:N0}", cartTotal + shippingFee)đ</strong>
+                                </div>
+                            </div>
+
+                            <!-- Nút đặt hàng -->
+                            <button type="submit" class="btn btn-primary btn-lg w-100">
+                                <i class="fa-solid fa-check me-2"></i>ĐẶT HÀNG
+                            </button>
+                            <a href="/cart" class="btn btn-outline-secondary w-100 mt-2">
+                                <i class="fa-solid fa-arrow-left me-2"></i>Quay lại giỏ hàng
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    $(document).ready(function() {
+        var subTotal = @cartTotal;
+        var shippingFee = @shippingFee;
+        var discountAmount = 0;
+
+        function updateTotal() {
+            var total = subTotal - discountAmount + shippingFee;
+            $('#totalAmount').text(formatNumber(total) + 'đ');
+        }
+
+        function formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        // Áp dụng mã giảm giá
+        $('#applyDiscountBtn').on('click', function() {
+            var code = $('#discountCodeInput').val().trim();
+            
+            if (!code) {
+                $('#discountMessage').removeClass('text-success').addClass('text-danger').text('Vui lòng nhập mã giảm giá!');
+                return;
+            }
+
+            $.ajax({
+                url: '/checkout/apply-discount',
+                type: 'POST',
+                data: { code: code, subTotal: subTotal },
+                success: function(response) {
+                    if (response.success) {
+                        discountAmount = response.discountAmount;
+                        $('#discountRow').show();
+                        $('#discountAmount').text('-' + formatNumber(discountAmount) + 'đ');
+                        $('#discountMessage').removeClass('text-danger').addClass('text-success').text(response.message);
+                        updateTotal();
+                        toastr.success('Áp dụng mã giảm giá thành công!');
+                    } else {
+                        discountAmount = 0;
+                        $('#discountRow').hide();
+                        $('#discountMessage').removeClass('text-success').addClass('text-danger').text(response.message);
+                        updateTotal();
+                        toastr.error(response.message);
+                    }
+                },
+                error: function() {
+                    toastr.error('Có lỗi xảy ra!');
+                }
+            });
+        });
+
+        // Validation form
+        $('#checkoutForm').on('submit', function(e) {
+            var phone = $('#phoneNumber').val().trim();
+            var address = $('#shippingAddress').val().trim();
+
+            if (!phone) {
+                e.preventDefault();
+                toastr.error('Vui lòng nhập số điện thoại!');
+                return false;
+            }
+
+            if (!address) {
+                e.preventDefault();
+                toastr.error('Vui lòng nhập địa chỉ giao hàng!');
+                return false;
+            }
+
+            // Disable button để tránh submit nhiều lần
+            $(this).find('button[type="submit"]').prop('disabled', true).text('Đang xử lý...');
+        });
+    });
+</script>
+}

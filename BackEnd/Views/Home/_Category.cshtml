@@ -1,0 +1,32 @@
+﻿@using BackEnd.Models.Entity
+@using System.Linq
+@model List<Category>?
+@{
+    // Partial can be rendered without a model, so normalize to an empty list to avoid NRE.
+    Layout = "_Layout";
+    var list = Model ?? new List<Category>();
+}
+<div class="widget widget-menu d-none d-md-block">
+    <h3 class="sidebar-title">Danh mục</h3>
+    <div class="sidebar-menu">
+        <ul>
+            @foreach (var category in list)
+            {
+                <li class="has-child dropdown ">
+                    <a href="" style="color:#000">
+                        @category?.Name
+                        <i class="fa-solid fa-angle-right"></i>
+                    </a>
+
+                    <ul>
+                        @foreach (var sub in (category?.subCategories ?? Enumerable.Empty<SubCategory>()))
+                        {
+                            <li class="haschild"><a href="" style="color:#000">@sub?.Name</a></li>
+                        }
+                    </ul>
+
+                </li>
+            }
+        </ul>
+    </div>
+</div>

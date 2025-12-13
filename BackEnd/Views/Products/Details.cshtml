@@ -1,0 +1,395 @@
+﻿@using BackEnd.Models.Entity
+
+@{
+
+    Layout = "_Layout";
+    var book = ViewBag.Book as Book;
+}
+<div id="product" class="productDetail-page">
+    <div class="breadcrumb-shop">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 pd5">
+                    <ol class="breadcrumb breadcrumb-arrows" itemscope itemtype="http://schema.org/BreadcrumbList">
+                        <li itemprop="itemListElement" itemtype="http://schema.org/ListItem">
+                            <a href="/" target="_self" itemprop="item">
+                                <span itemprop="name">Trang chủ</span>
+                            </a>
+                        </li>
+                        <li itemprop="itemListElement" itemtype="http://schema.org/ListItem">
+                            <a href="/" target="_self" itemprop="item">
+                                <span itemprop="name">Truyện tranh</span>
+                            </a>
+                        </li>
+                        <li itemprop="itemListElement" itemtype="http://schema.org/ListItem">
+                            <a href="/" target="_self" itemprop="item">
+                                <span itemprop="name">@book.Name</span>
+                            </a>
+                        </li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="product-detail-wrapper py-5 bg-white">
+        <div class="container">
+            <div class="row">
+                <div class="col-12">
+                    <div class="row product-detail-main mb-5">
+                        <div class="col-12 col-lg-9">
+                            <div class="row">
+                                <div class="col-12 col-lg-6 product-content-img">
+                                    <div class="product-gallery">
+                                        <div class="product-image-detail box__product-gallery scroll">
+                                            <div class="text-center">
+                                                @{
+                                                    var images = book.Images?.FirstOrDefault();
+                                                    var ImagePath = Url.Content("~/img/product/" + images.Path);
+                                                }
+                                                <img class="product-image-feature"
+                                                     src="@ImagePath" />
+                                            </div>
+                                            <div class="thumbnail_custom ">
+                                                <ul id="sliderproduct"
+                                                    class="site-box-content slide_product owl-carousel owl-theme owl-nav-style-3 clearfix">
+                                                    @foreach(var imgpath in book.Images)
+                                                    {
+                                                        <li class="product-gallery-item gallery-item active">
+                                                            <a href="#" data-image="/wwwroot/product-detail1.png">
+                                                                @{var Path = Url.Content("~/img/product/" + imgpath.Path);}
+                                                                <img src="@Path" alt="thumb1">
+                                                            </a>
+                                                        </li>
+                                                    }
+
+                                                </ul>
+                                            </div>
+                                            <!-- Zoom lens -->
+                                            <div class="zoom-container" aria-hidden="true" style="display:none;">
+                                                <div class="zoom-lens"></div>
+                                            </div>
+                                        </div>
+                                        <div class="product-gallery__thumbs-container">
+                                            <div class="product-gallery__thumbs owl-carousel owl-loaded owl-drag"
+                                                 data-nav="true" data-loop="true" data-margin="15" data-sm-items="4"
+                                                 data-lg-item="5">
+                                                <div class="owl-stage-outer">
+                                                    <div class="owl-item">
+                                                    </div>
+                                                </div>
+                                                <div class="owl-nav disabled"></div>
+                                                <div class="owl-dots disabled"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-lg-6 product-content-des">
+                                    <div class="product-title">
+                                        <h1>@book.Name</h1>
+                                        <span id="pro_sku">ISBN: 8935325031410</span>
+                                    </div>
+                                    <p class="product-type">AZ Việt Nam</p>
+                                    <div class="product-price" id="price-preview">
+                                        <span class="pro-price">@String.Format("{0:N0}", @book.Price_Discount) đ </span>
+                                        <del>@String.Format("{0:N0}", book.Price) đ</del>
+                                        @{
+                                            var percent = (int)Math.Round((1 - (book.Price_Discount / book.Price)) * 100) + "%";
+                                        }
+                                        <span class="pro-sale hide">-@percent</span>
+                                    </div>
+                                    <form id="addToCartForm" action="/cart/add" method="post" class="variants clearfix">
+                                        <input type="hidden" name="bookId" value="@book.Id" />
+                                        <input type="hidden" name="returnUrl" value="/products/@book.Id" />
+                                        <div class="selector-actions">
+                                            <div class="quantity-area clearfix d-flex m-0 p-0 gap-0">
+                                                <input type="button" value="-" class="qty-btn" id="qty-minus" />
+                                                <input type="text" id="quantity" name="quantity" value="1" min="1" max="@book.Stock"
+                                                       class="quantity-selector" readonly>
+                                                <input type="button" value="+" class="qty-btn" id="qty-plus" />
+                                            </div>
+                                            <div class="wrap-addcart mt-2">
+                                                <button type="submit" class="btn btn-primary btn-addtocart">Thêm vào giỏ</button>
+                                                <button type="button" class="btn btn-dark btn-addtocart" id="btn-buy-now">Mua ngay</button>
+                                            </div>
+
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-3 d-none d-md-block">
+                            <div class="pro-service">
+                                <div class="pro-service-title">
+                                    Chỉ có ở Vinabook
+                                </div>
+                                <div class="pro-service-item">
+                                    <div class="pro-service-icon">
+                                        <img src="~/img/pro_service_icon_1.png" alt="icon">
+                                    </div>
+                                    <div class="pro-service-text">
+                                        Sản phẩm 100% chính hãng
+                                    </div>
+                                </div>
+                                <div class="pro-service-item">
+                                    <div class="pro-service-icon">
+                                        <img src="~/img/pro_service_icon_2.png" alt="icon">
+                                    </div>
+                                    <div class="pro-service-text">
+                                        Tư vấn mua sách trong giờ hành chính
+                                    </div>
+                                </div>
+                                <div class="pro-service-item">
+                                    <div class="pro-service-icon">
+                                        <img src="~/img/pro_service_icon_3.png" alt="icon">
+                                    </div>
+                                    <div class="pro-service-text">
+                                        Miễn phí vận chuyển cho đơn hàng từ 250.000đ
+                                    </div>
+                                </div>
+                                <div class="pro-service-item">
+                                    <div class="pro-service-icon">
+                                        <img src="~/img/pro_service_icon_5.png" alt="icon">
+                                    </div>
+                                    <div class="pro-service-text">
+                                        Hotline: 1900 6401
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-9">
+                    <div class="product-description">
+                        <nav>
+                            <div class="nav nav-tabs" role="tablist">
+                                <a class="nav-item nav-link active" data-toggle="tab" role="tab"
+                                   aria-roledescription="nav-home" aria-selected="true">
+                                    Giới thiệu sách
+                                </a>
+                            </div>
+                        </nav>
+                        <div class="tab-content">
+                            <div class="tab-pane fade show active" role="tabpanel" aria-labelledby="nav-home-tab">
+                                <h2>Mô tả sản phẩm</h2>
+                                <p>
+                                    <strong>@book.Name</strong>
+                                </p>
+                                <p>
+                                    @book.Description
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-3">
+                    <div class="sidebar-block sidebar-product mb-4">
+                        <div class="sidebar-title">
+                            <h3>Sản phẩm nổi bật</h3>
+                        </div>
+                        <div class="sidebar-content">
+                            @{
+                                var featuredBooks = ViewBag.FeaturedBooks as IEnumerable<Book>;
+                            }
+                            @if (featuredBooks != null && featuredBooks.Any())
+                            {
+                                @foreach (var featuredBook in featuredBooks)
+                                {
+                                    var featuredImg = featuredBook.Images?.FirstOrDefault();
+                                    var featuredImgPath = featuredImg != null ? Url.Content("~/img/product/" + featuredImg.Path) : Url.Content("~/img/default-book.jpg");
+                                    var featuredPercent = featuredBook.Price > 0 ? (int)Math.Round((1 - (featuredBook.Price_Discount / featuredBook.Price)) * 100) : 0;
+                                    <div class="product-item-mini d-flex gap-0 m-0 p-0">
+                                        <div class="product-img" style="border: none;">
+                                            @if (featuredPercent > 0)
+                                            {
+                                                <div class="product-sale" style="background: #f03737;"><span>-@featuredPercent%</span></div>
+                                            }
+                                            <a href="/products/@featuredBook.Id">
+                                                <img src="@featuredImgPath" class="img-fluid" alt="@featuredBook.Name" />
+                                            </a>
+                                        </div>
+                                        <div class="product-content m-0 p-0">
+                                            <h3 class="product-title">
+                                                <a href="/products/@featuredBook.Id" title="@featuredBook.Name">
+                                                    @featuredBook.Name
+                                                </a>
+                                            </h3>
+                                            <div class="box-pro-prices">
+                                                <p class="pro-price highlight d-flex align-items-center gap-2">
+                                                    <span class="current-price">@String.Format("{0:N0}", featuredBook.Price_Discount)₫</span>
+                                                    @if (featuredBook.Price > featuredBook.Price_Discount)
+                                                    {
+                                                        <span class="pro-price-del">
+                                                            <del class="compare-price">
+                                                                @String.Format("{0:N0}", featuredBook.Price)₫
+                                                            </del>
+                                                        </span>
+                                                    }
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="listproductRelated clearfix">
+                        <div class="section-heading text-center">
+                            <h2 class="section-title">
+                                <span>Sản phẩm liên quan</span>
+                            </h2>
+                            <div class="line">
+                                <div class="circle">
+                                    <span class="line-left line-shape bg-primary"></span>
+                                    <span class="line-right line-shape bg-primary"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="content-product-list row">
+                            @{
+                                var relatedBooks = ViewBag.RelatedBooks as IEnumerable<Book>;
+                            }
+                            @if (relatedBooks != null && relatedBooks.Any())
+                            {
+                                @foreach (var relatedBook in relatedBooks)
+                                {
+                                    var relatedImg = relatedBook.Images?.FirstOrDefault();
+                                    var relatedImgPath = relatedImg != null ? Url.Content("~/img/product/" + relatedImg.Path) : Url.Content("~/img/default-book.jpg");
+                                    var relatedPercent = relatedBook.Price > 0 ? (int)Math.Round((1 - (relatedBook.Price_Discount / relatedBook.Price)) * 100) : 0;
+                                    <div class="col-6 col-md-4 col-lg-3 d-flex">
+                                        <div class="product-item">
+                                            <div class="product-img" style="border:none;">
+                                                @if (relatedPercent > 0)
+                                                {
+                                                    <div class="product-sale" style="background: #f03737;">
+                                                        <span>-@relatedPercent%</span>
+                                                    </div>
+                                                }
+                                                <a href="/products/@relatedBook.Id">
+                                                    <img class="img img-thumbnail img-fluid" src="@relatedImgPath" alt="@relatedBook.Name" />
+                                                </a>
+                                                <div class="button-add d-none d-md-flex">
+                                                    <button type="button" data-tooltip="Xem nhanh">
+                                                        <i class="fa-solid fa-magnifying-glass-plus"></i>
+                                                    </button>
+                                                    <button type="button" data-tooltip="Thêm vào giỏ">
+                                                        <i class="fa-solid fa-cart-shopping"></i>
+                                                    </button>
+                                                    <a href="/products/@relatedBook.Id" data-tooltip="Xem chi tiết">
+                                                        <i class="fa-solid fa-eye"></i>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                            <div class="product-detail">
+                                                <h3 class="proname" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 300px;">
+                                                    <a href="/products/@relatedBook.Id" title="@relatedBook.Name">@relatedBook.Name</a>
+                                                </h3>
+                                                <p class="pro-price highlight">
+                                                    <span class="currennt-price">@String.Format("{0:N0}", relatedBook.Price_Discount)đ</span>
+                                                    @if (relatedBook.Price > relatedBook.Price_Discount)
+                                                    {
+                                                        <del class="compare-price">@String.Format("{0:N0}", relatedBook.Price)đ</del>
+                                                    }
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="col-12 text-center">
+                                    <p>Không có sản phẩm liên quan</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const quantityInput = document.getElementById('quantity');
+            const minusBtn = document.getElementById('qty-minus');
+            const plusBtn = document.getElementById('qty-plus');
+            const buyNowBtn = document.getElementById('btn-buy-now');
+            const addToCartForm = document.getElementById('addToCartForm');
+            const addToCartBtn = addToCartForm.querySelector('button[type="submit"]');
+            
+            const minQty = parseInt(quantityInput.getAttribute('min')) || 1;
+            const maxQty = parseInt(quantityInput.getAttribute('max')) || 999;
+            const bookId = addToCartForm.querySelector('input[name="bookId"]').value;
+
+            // Nút giảm số lượng
+            minusBtn.addEventListener('click', function () {
+                let currentQty = parseInt(quantityInput.value) || 1;
+                if (currentQty > minQty) {
+                    quantityInput.value = currentQty - 1;
+                }
+            });
+
+            // Nút tăng số lượng
+            plusBtn.addEventListener('click', function () {
+                let currentQty = parseInt(quantityInput.value) || 1;
+                if (currentQty < maxQty) {
+                    quantityInput.value = currentQty + 1;
+                }
+            });
+
+            // Thêm vào giỏ hàng bằng AJAX
+            addToCartBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                const quantity = parseInt(quantityInput.value) || 1;
+                
+                $.ajax({
+                    url: '/cart/add-ajax',
+                    type: 'POST',
+                    data: { bookId: bookId, quantity: quantity },
+                    success: function (response) {
+                        if (response.success) {
+                            toastr.success(response.message);
+                            // Cập nhật số lượng giỏ hàng trên header
+                            updateCartBadge(response.cartCount);
+                            // Refresh dropdown giỏ hàng
+                            refreshCartDropdown();
+                        } else {
+                            toastr.error('Có lỗi xảy ra!');
+                        }
+                    },
+                    error: function () {
+                        toastr.error('Không thể thêm vào giỏ hàng!');
+                    }
+                });
+            });
+
+            // Nút Mua ngay - thêm vào giỏ và chuyển đến trang giỏ hàng
+            buyNowBtn.addEventListener('click', function () {
+                const quantity = parseInt(quantityInput.value) || 1;
+                
+                $.ajax({
+                    url: '/cart/add-ajax',
+                    type: 'POST',
+                    data: { bookId: bookId, quantity: quantity },
+                    success: function (response) {
+                        if (response.success) {
+                            toastr.success(response.message);
+                            // Chuyển đến trang giỏ hàng sau 500ms
+                            setTimeout(function() {
+                                window.location.href = '/cart';
+                            }, 500);
+                        }
+                    },
+                    error: function () {
+                        toastr.error('Có lỗi xảy ra!');
+                    }
+                });
+            });
+        });
+    </script>
+}

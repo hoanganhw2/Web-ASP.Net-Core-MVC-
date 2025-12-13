@@ -1,0 +1,505 @@
+@model List<BackEnd.Models.Entity.DiscountCode>
+@{
+    ViewData["Title"] = "Quản lý Mã giảm giá";
+}
+
+<!-- Page Header -->
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="page-title">Quản lý Mã giảm giá</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/admin">Admin</a></li>
+                <li class="breadcrumb-item active">Mã giảm giá</li>
+            </ol>
+        </nav>
+    </div>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addDiscountModal">
+        <i class="fas fa-plus me-2"></i>Thêm mã giảm giá
+    </button>
+</div>
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stats-value">@Model.Count</div>
+                    <div class="stats-label">Tổng mã</div>
+                </div>
+                <div class="icon primary">
+                    <i class="fas fa-tags"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stats-value">@Model.Count(d => d.IsActive)</div>
+                    <div class="stats-label">Đang hoạt động</div>
+                </div>
+                <div class="icon success">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stats-value">@Model.Count(d => d.EndDate < DateTime.Now)</div>
+                    <div class="stats-label">Đã hết hạn</div>
+                </div>
+                <div class="icon warning">
+                    <i class="fas fa-clock"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stats-value">@Model.Sum(d => d.UsedCount)</div>
+                    <div class="stats-label">Lượt sử dụng</div>
+                </div>
+                <div class="icon info">
+                    <i class="fas fa-shopping-cart"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Discounts List -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title">Danh sách mã giảm giá</h5>
+        <div class="input-group" style="width: 250px;">
+            <input type="text" id="searchInput" class="form-control" placeholder="Tìm mã giảm giá...">
+            <button class="btn btn-outline-secondary" type="button">
+                <i class="fas fa-search"></i>
+            </button>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table" id="discountsTable">
+                <thead>
+                    <tr>
+                        <th>Mã</th>
+                        <th>Mô tả</th>
+                        <th>Loại</th>
+                        <th>Giá trị</th>
+                        <th>Đơn tối thiểu</th>
+                        <th>Sử dụng</th>
+                        <th>Thời hạn</th>
+                        <th>Trạng thái</th>
+                        <th style="width: 150px;">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center text-muted py-4">
+                                <i class="fas fa-tag fa-2x mb-2"></i><br>
+                                Chưa có mã giảm giá nào
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var discount in Model)
+                        {
+                            var isExpired = discount.EndDate < DateTime.Now;
+                            var statusClass = discount.IsActive && !isExpired ? "bg-success" : (isExpired ? "bg-secondary" : "bg-warning");
+                            var statusText = discount.IsActive && !isExpired ? "Hoạt động" : (isExpired ? "Hết hạn" : "Tạm dừng");
+                            
+                            <tr>
+                                <td>
+                                    <code class="fs-6">@discount.Code</code>
+                                </td>
+                                <td style="max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="@discount.Description">
+                                    @discount.Description
+                                </td>
+                                <td>
+                                    @if (discount.DiscountType == 0)
+                                    {
+                                        <span class="badge bg-info">Phần trăm</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-primary">Số tiền</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (discount.DiscountType == 0)
+                                    {
+                                        <strong>@discount.DiscountValue%</strong>
+                                        @if (discount.MaxDiscountAmount > 0)
+                                        {
+                                            <div class="small text-muted">Tối đa: @String.Format("{0:N0}đ", discount.MaxDiscountAmount)</div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <strong>@String.Format("{0:N0}đ", discount.DiscountValue)</strong>
+                                    }
+                                </td>
+                                <td>@String.Format("{0:N0}đ", discount.MinOrderAmount)</td>
+                                <td>
+                                    <span class="@(discount.UsedCount >= discount.UsageLimit ? "text-danger" : "")">
+                                        @discount.UsedCount/@discount.UsageLimit
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="small">@discount.StartDate.ToString("dd/MM/yy")</div>
+                                    <div class="small text-muted">đến @discount.EndDate.ToString("dd/MM/yy")</div>
+                                </td>
+                                <td>
+                                    <span class="badge @statusClass">@statusText</span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary btn-action me-1" 
+                                            onclick='editDiscount(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(discount)))'
+                                            title="Sửa">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm @(discount.IsActive ? "btn-outline-warning" : "btn-outline-success") btn-action me-1"
+                                            onclick="toggleDiscount(@discount.Id)"
+                                            title="@(discount.IsActive ? "Tạm dừng" : "Kích hoạt")">
+                                        <i class="fas @(discount.IsActive ? "fa-pause" : "fa-play")"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger btn-action"
+                                            onclick="deleteDiscount(@discount.Id, '@discount.Code')"
+                                            title="Xóa">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <!-- Pagination -->
+    <div class="card-footer d-flex justify-content-between align-items-center">
+        <div class="text-muted">
+            Hiển thị <span id="showingStart">1</span>-<span id="showingEnd">10</span> trong <span id="totalItems">@Model.Count</span> mã giảm giá
+        </div>
+        <nav>
+            <ul class="pagination pagination-sm mb-0" id="pagination"></ul>
+        </nav>
+    </div>
+</div>
+
+<!-- Add Discount Modal -->
+<div class="modal fade" id="addDiscountModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form action="/admin/discounts/add" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title">Thêm mã giảm giá mới</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Mã giảm giá <span class="text-danger">*</span></label>
+                            <input type="text" name="code" class="form-control text-uppercase" required placeholder="VD: SALE50">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Mô tả</label>
+                            <input type="text" name="description" class="form-control" placeholder="Mô tả ngắn">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Loại giảm giá</label>
+                            <select name="discountType" class="form-select" id="addDiscountType">
+                                <option value="0">Phần trăm (%)</option>
+                                <option value="1">Số tiền cố định</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Giá trị giảm <span class="text-danger">*</span></label>
+                            <input type="number" name="discountValue" class="form-control" required min="0" step="0.01">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Giảm tối đa</label>
+                            <input type="number" name="maxDiscountAmount" class="form-control" value="0" min="0">
+                            <div class="form-text">Áp dụng khi giảm %</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Đơn tối thiểu</label>
+                            <input type="number" name="minOrderAmount" class="form-control" value="0" min="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Số lượt sử dụng</label>
+                            <input type="number" name="usageLimit" class="form-control" value="100" min="1">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Trạng thái</label>
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" name="isActive" value="true" checked>
+                                <label class="form-check-label">Kích hoạt</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Ngày bắt đầu</label>
+                            <input type="date" name="startDate" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Ngày kết thúc</label>
+                            <input type="date" name="endDate" class="form-control" value="@DateTime.Now.AddMonths(1).ToString("yyyy-MM-dd")">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Lưu
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Discount Modal -->
+<div class="modal fade" id="editDiscountModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Sửa mã giảm giá</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editId">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Mã giảm giá</label>
+                        <input type="text" id="editCode" class="form-control text-uppercase" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Mô tả</label>
+                        <input type="text" id="editDescription" class="form-control">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Loại giảm giá</label>
+                        <select id="editDiscountType" class="form-select">
+                            <option value="0">Phần trăm (%)</option>
+                            <option value="1">Số tiền cố định</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Giá trị giảm</label>
+                        <input type="number" id="editDiscountValue" class="form-control" min="0" step="0.01">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Giảm tối đa</label>
+                        <input type="number" id="editMaxDiscountAmount" class="form-control" min="0">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Đơn tối thiểu</label>
+                        <input type="number" id="editMinOrderAmount" class="form-control" min="0">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Số lượt sử dụng</label>
+                        <input type="number" id="editUsageLimit" class="form-control" min="1">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Trạng thái</label>
+                        <div class="form-check form-switch mt-2">
+                            <input class="form-check-input" type="checkbox" id="editIsActive">
+                            <label class="form-check-label">Kích hoạt</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Ngày bắt đầu</label>
+                        <input type="date" id="editStartDate" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Ngày kết thúc</label>
+                        <input type="date" id="editEndDate" class="form-control">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" onclick="saveDiscount()">
+                    <i class="fas fa-save me-2"></i>Cập nhật
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteDiscountModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Xác nhận xóa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc chắn muốn xóa mã "<strong><code id="deleteDiscountCode"></code></strong>"?</p>
+                <p class="text-danger mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Hành động này không thể hoàn tác!</p>
+                <input type="hidden" id="deleteDiscountId">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDeleteDiscount()">
+                    <i class="fas fa-trash me-2"></i>Xóa
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const itemsPerPage = 10;
+        let currentPage = 1;
+        let allRows = [];
+        let filteredRows = [];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            allRows = Array.from(document.querySelectorAll('#discountsTable tbody tr'));
+            filteredRows = allRows;
+            renderPagination();
+            showPage(1);
+        });
+
+        document.getElementById('searchInput').addEventListener('input', function() {
+            const filter = this.value.toLowerCase();
+            filteredRows = allRows.filter(row => row.textContent.toLowerCase().includes(filter));
+            currentPage = 1;
+            renderPagination();
+            showPage(1);
+        });
+
+        function showPage(page) {
+            currentPage = page;
+            const start = (page - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            allRows.forEach(row => row.style.display = 'none');
+            filteredRows.slice(start, end).forEach(row => row.style.display = '');
+            document.getElementById('showingStart').textContent = filteredRows.length > 0 ? start + 1 : 0;
+            document.getElementById('showingEnd').textContent = Math.min(end, filteredRows.length);
+            document.getElementById('totalItems').textContent = filteredRows.length;
+            renderPagination();
+        }
+
+        function renderPagination() {
+            const totalPages = Math.ceil(filteredRows.length / itemsPerPage);
+            const pagination = document.getElementById('pagination');
+            pagination.innerHTML = '';
+            if (totalPages <= 1) return;
+            pagination.innerHTML += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}"><a class="page-link" href="#" onclick="showPage(${currentPage - 1}); return false;">«</a></li>`;
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                    pagination.innerHTML += `<li class="page-item ${i === currentPage ? 'active' : ''}"><a class="page-link" href="#" onclick="showPage(${i}); return false;">${i}</a></li>`;
+                } else if (i === currentPage - 2 || i === currentPage + 2) {
+                    pagination.innerHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                }
+            }
+            pagination.innerHTML += `<li class="page-item ${currentPage === totalPages ? 'disabled' : ''}"><a class="page-link" href="#" onclick="showPage(${currentPage + 1}); return false;">»</a></li>`;
+        }
+
+        function editDiscount(discount) {
+            document.getElementById('editId').value = discount.Id;
+            document.getElementById('editCode').value = discount.Code;
+            document.getElementById('editDescription').value = discount.Description;
+            document.getElementById('editDiscountType').value = discount.DiscountType;
+            document.getElementById('editDiscountValue').value = discount.DiscountValue;
+            document.getElementById('editMaxDiscountAmount').value = discount.MaxDiscountAmount;
+            document.getElementById('editMinOrderAmount').value = discount.MinOrderAmount;
+            document.getElementById('editUsageLimit').value = discount.UsageLimit;
+            document.getElementById('editIsActive').checked = discount.IsActive;
+            document.getElementById('editStartDate').value = discount.StartDate.split('T')[0];
+            document.getElementById('editEndDate').value = discount.EndDate.split('T')[0];
+            new bootstrap.Modal(document.getElementById('editDiscountModal')).show();
+        }
+
+        function saveDiscount() {
+            const data = {
+                id: document.getElementById('editId').value,
+                code: document.getElementById('editCode').value,
+                description: document.getElementById('editDescription').value,
+                discountType: document.getElementById('editDiscountType').value,
+                discountValue: document.getElementById('editDiscountValue').value,
+                maxDiscountAmount: document.getElementById('editMaxDiscountAmount').value,
+                minOrderAmount: document.getElementById('editMinOrderAmount').value,
+                usageLimit: document.getElementById('editUsageLimit').value,
+                isActive: document.getElementById('editIsActive').checked,
+                startDate: document.getElementById('editStartDate').value,
+                endDate: document.getElementById('editEndDate').value
+            };
+
+            const params = new URLSearchParams(data).toString();
+
+            fetch('/admin/discounts/update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: params
+            })
+            .then(response => response.json())
+            .then(data => {
+                bootstrap.Modal.getInstance(document.getElementById('editDiscountModal')).hide();
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast(data.message, 'error');
+                }
+            });
+        }
+
+        function toggleDiscount(id) {
+            fetch(`/admin/discounts/toggle/${id}`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast(data.message, 'error');
+                }
+            });
+        }
+
+        function deleteDiscount(id, code) {
+            document.getElementById('deleteDiscountId').value = id;
+            document.getElementById('deleteDiscountCode').textContent = code;
+            new bootstrap.Modal(document.getElementById('deleteDiscountModal')).show();
+        }
+
+        function confirmDeleteDiscount() {
+            const id = document.getElementById('deleteDiscountId').value;
+
+            fetch(`/admin/discounts/delete/${id}`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                bootstrap.Modal.getInstance(document.getElementById('deleteDiscountModal')).hide();
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast(data.message, 'error');
+                }
+            });
+        }
+    </script>
+}
